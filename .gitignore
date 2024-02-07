@@ -3,9 +3,8 @@
 **/*.dat
 **/*.lammpstrj
 **/*.pyc
-molecular-simulation/*.data
 
-docs/build
+python-codes/*.data
 
 **/log.*
 
