@@ -89,7 +89,7 @@ class Outputs:
                 f.write("ITEM: TIMESTEP\n")
                 f.write(str(self.step) + "\n")
                 f.write("ITEM: NUMBER OF ATOMS\n")
-                f.write(str(self.number_atoms) + "\n")
+                f.write(str(self.total_number_atoms) + "\n")
                 f.write("ITEM: BOX BOUNDS pp pp pp\n")
                 for dim in np.arange(self.dimensions):
                     f.write(str(self.box_boundaries[dim][0]*self.reference_distance) + " " + str(self.box_boundaries[dim][1]*self.reference_distance) + "\n")
@@ -99,7 +99,7 @@ class Outputs:
                 if velocity:
                     atoms_velocities = copy.deepcopy(self.atoms_velocities)
                 else:
-                    atoms_velocities = np.zeros((self.number_atoms, self.dimensions))
+                    atoms_velocities = np.zeros((self.total_number_atoms, self.dimensions))
                 for xyz, vxyz in zip(atoms_positions, atoms_velocities):
                     f.write(str(cpt) + " " + str(1) + " " +str(xyz[0]*self.reference_distance)+" "+str(xyz[1]*self.reference_distance)+" "+str(xyz[2]*self.reference_distance) + " " +str(vxyz[0]*self.reference_distance/self.reference_time)+" "+str(vxyz[1]*self.reference_distance/self.reference_time)+" "+str(vxyz[2]*self.reference_distance/self.reference_time)+"\n") 
                     cpt += 1
@@ -109,7 +109,7 @@ class Outputs:
         """Write a LAMMPS data file containing atoms positions and velocities"""
         f = open(filename, "w")
         f.write('# LAMMPS data file \n\n')
-        f.write(str(self.number_atoms)+' atoms\n')
+        f.write(str(self.total_number_atoms)+' atoms\n')
         f.write('1 atom types\n')
         f.write('\n')
         for LminLmax, dim in zip(self.box_boundaries*self.reference_distance, ["x", "y", "z"]):

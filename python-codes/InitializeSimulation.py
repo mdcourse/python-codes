@@ -11,8 +11,8 @@ class InitializeSimulation:
                  number_atoms,
                  Lx,
                  dimensions=3,
-                 Ly = None,
-                 Lz = None,
+                 Ly=None,
+                 Lz=None,
                  epsilon=0.1,
                  sigma=1,
                  atom_mass=1,
@@ -24,7 +24,8 @@ class InitializeSimulation:
                  *args,
                  **kwargs,
                  ):
-        super().__init__(*args, **kwargs) 
+        super().__init__(*args, **kwargs)
+
         self.number_atoms = number_atoms
         self.Lx = Lx
         self.Ly = Ly
@@ -57,6 +58,7 @@ class InitializeSimulation:
         self.desired_pressure = self.nondimensionalise_units(self.desired_pressure, "pressure")
 
         self.initialize_box()
+        self.initialize_atoms()
         self.populate_box()
         self.give_velocity()
         self.write_lammps_data(filename="initial.data")
@@ -93,24 +95,32 @@ class InitializeSimulation:
         box_boundaries = self.nondimensionalise_units(box_boundaries, "distance")
         self.box_boundaries = box_boundaries
 
+    def initialize_atoms(self):
+        """"""    
+        if isinstance(self.number_atoms, list):
+            self.total_number_atoms = np.sum(self.number_atoms)
+        else:
+            self.total_number_atoms = self.number_atoms
+        
     def populate_box(self):
         """Place atoms at random positions within the box."""
-        atoms_positions = np.zeros((self.number_atoms, self.dimensions))
-        if self.provided_positions is not None:
+        atoms_positions = np.zeros((self.total_number_atoms, self.dimensions))
+        if self.provided_positions is not None: # tofix : do we really want provided positions ?
             atoms_positions = self.provided_positions/self.reference_distance
         else:
             for dim in np.arange(self.dimensions):
-                atoms_positions[:, dim] = np.random.random(self.number_atoms)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2    
+                atoms_positions[:, dim] = np.random.random(self.total_number_atoms)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2    
         self.atoms_positions = atoms_positions
 
     def give_velocity(self):
         """Give velocity to atoms so that the initial temperature is the desired one."""
-        atoms_velocities = np.zeros((self.number_atoms, self.dimensions))
         if self.provided_velocities is not None:
             atoms_velocities = self.provided_velocities/self.reference_distance*self.reference_time
         else:
-            for dim in np.arange(self.dimensions):  
-                atoms_velocities[:, dim] = np.random.normal(size=self.number_atoms)
+            atoms_velocities = np.zeros((self.total_number_atoms, self.dimensions))
+            for dim in np.arange(self.dimensions):
+                atoms_velocities = np.zeros((self.total_number_atoms, self.dimensions))
+                atoms_velocities[:, dim] = np.random.normal(size=self.total_number_atoms)
         self.atoms_velocities = atoms_velocities
         self.calculate_temperature()
         scale = np.sqrt(1+((self.desired_temperature/self.temperature)-1))

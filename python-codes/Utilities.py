@@ -18,12 +18,12 @@ class Utilities:
     def calculate_temperature(self):
         """Follow the expression given in the LAMMPS documentation"""
         self.calculate_kinetic_energy()
-        Ndof = self.dimensions*self.number_atoms-self.dimensions
+        Ndof = self.dimensions*self.total_number_atoms-self.dimensions
         self.temperature = 2*self.Ekin/Ndof
 
     def calculate_pressure(self):
         """Evaluate p based on the Virial equation (Eq. 4.4.2 in Frenkel-Smith 2002)"""
-        Ndof = self.dimensions*self.number_atoms-self.dimensions    
+        Ndof = self.dimensions*self.total_number_atoms-self.dimensions    
         volume = np.prod(np.diff(self.box_boundaries))
         self.calculate_temperature()
         p_ideal = (Ndof/self.dimensions)*self.temperature/volume
@@ -32,10 +32,10 @@ class Utilities:
 
     def evaluate_rij_matrix(self):
         """Evaluate vector rij between particles."""
-        rij = np.zeros((self.number_atoms,self.number_atoms,3))
-        for Ni in range(self.number_atoms-1):
+        rij = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        for Ni in range(self.total_number_atoms-1):
             position_i = self.atoms_positions[Ni]
-            for Nj in np.arange(Ni+1,self.number_atoms):
+            for Nj in np.arange(Ni+1,self.total_number_atoms):
                 position_j = self.atoms_positions[Nj]
                 box_size = np.diff(self.box_boundaries).reshape(3)
                 rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
@@ -47,7 +47,7 @@ class Utilities:
     def calculate_r(self, position_i, positions_j, number_atoms = None):
         """Calculate the shortest distance between position_i and positions_j."""
         if number_atoms is None:
-            rij2 = np.zeros(self.number_atoms)
+            rij2 = np.zeros(self.total_number_atoms)
         else:
             rij2 = np.zeros(number_atoms)
         box_size = np.diff(self.box_boundaries).reshape(3)
@@ -68,10 +68,10 @@ class Utilities:
 
     def evaluate_LJ_force(self):
         """Evaluate force based on LJ potential derivative."""
-        forces = np.zeros((self.number_atoms,3))
-        for Ni in range(self.number_atoms-1):
+        forces = np.zeros((self.total_number_atoms,3))
+        for Ni in range(self.total_number_atoms-1):
             position_i = self.atoms_positions[Ni]
-            for Nj in np.arange(Ni+1,self.number_atoms):
+            for Nj in np.arange(Ni+1,self.total_number_atoms):
                 position_j = self.atoms_positions[Nj]
                 box_size = np.diff(self.box_boundaries).reshape(3)
                 rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
@@ -84,10 +84,10 @@ class Utilities:
     
     def evaluate_LJ_matrix(self):
         """Evaluate force based on LJ potential derivative."""
-        forces = np.zeros((self.number_atoms,self.number_atoms,3))
-        for Ni in range(self.number_atoms-1):
+        forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        for Ni in range(self.total_number_atoms-1):
             position_i = self.atoms_positions[Ni]
-            for Nj in np.arange(Ni+1,self.number_atoms):
+            for Nj in np.arange(Ni+1,self.total_number_atoms):
                 position_j = self.atoms_positions[Nj]
                 box_size = np.diff(self.box_boundaries).reshape(3)
                 rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
