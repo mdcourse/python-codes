@@ -43,11 +43,11 @@ class InitializeSimulation:
         if self.seed is not None:
             np.random.seed(self.seed)
 
+        """
         self.reference_distance = self.sigma
         self.reference_energy = self.epsilon
         self.reference_mass = self.atom_mass
         self.reference_time = np.sqrt((self.reference_mass/cst.kilo/cst.Avogadro)*(self.reference_distance*cst.angstrom)**2/(self.reference_energy*cst.calorie*cst.kilo/cst.Avogadro))/cst.femto
-
         self.Lx = self.nondimensionalise_units(self.Lx, "distance")
         self.Ly = self.nondimensionalise_units(self.Ly, "distance")
         self.Lz = self.nondimensionalise_units(self.Lz, "distance")
@@ -56,14 +56,16 @@ class InitializeSimulation:
         self.atom_mass = self.nondimensionalise_units(self.atom_mass, "mass")
         self.desired_temperature = self.nondimensionalise_units(self.desired_temperature, "temperature")
         self.desired_pressure = self.nondimensionalise_units(self.desired_pressure, "pressure")
-
+        """
+        
         self.initialize_box()
         self.initialize_atoms()
         self.populate_box()
         self.give_velocity()
         self.write_lammps_data(filename="initial.data")
 
-    def nondimensionalise_units(self, variable, type):
+        """
+        def nondimensionalise_units(self, variable, type):
         kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
         if variable is not None:
             if type == "distance":
@@ -81,6 +83,7 @@ class InitializeSimulation:
             else:
                 print("Unknown variable type", type)
         return variable
+        """
 
     def initialize_box(self):
         """Define box boundaries based on Lx, Ly, and Lz.
@@ -92,15 +95,39 @@ class InitializeSimulation:
                 box_boundaries[dim] = -L/2, L/2
             else:
                 box_boundaries[dim] = -self.Lx/2, self.Lx/2
-        box_boundaries = self.nondimensionalise_units(box_boundaries, "distance")
+        # box_boundaries = self.nondimensionalise_units(box_boundaries, "distance")
         self.box_boundaries = box_boundaries
 
     def initialize_atoms(self):
-        """"""    
+        """Create initial atom array from input parameters"""    
         if isinstance(self.number_atoms, list):
+            # #todo MOVE THESE CHECK IN A DEDICATED FUNCTION 
+            assert isinstance(self.sigma, list)
+            assert isinstance(self.epsilon, list)
+            assert isinstance(self.atom_mass, list)
+            assert len(self.number_atoms) == len(self.sigma)
+            assert len(self.number_atoms) == len(self.epsilon)
+            assert len(self.number_atoms) == len(self.atom_mass)
             self.total_number_atoms = np.sum(self.number_atoms)
+            atom_sigmas = []
+            atom_epsilons = []
+            atom_masses = []
+            for sigma, epsilon, mass, n_atom in zip(self.sigma, self.epsilon, self.atom_mass, self.number_atoms):
+                atom_sigmas += [sigma] * n_atom
+                atom_epsilons += [epsilon] * n_atom
+                atom_masses += [mass] * n_atom
+            self.atom_sigmas = np.array(atom_sigmas)
+            self.atom_epsilons = np.array(atom_epsilons)
+            self.atom_masses = np.array(atom_masses)
+            print(self.atom_sigmas)
+            print(self.atom_epsilons)
+            print(self.atom_masses)
         else:
             self.total_number_atoms = self.number_atoms
+            self.atom_sigmas = np.array([self.sigma]*self.number_atoms)
+            self.atom_epsilons = np.array([self.epsilon]*self.number_atoms)
+            self.atom_masses = np.array([self.atom_mass]*self.number_atoms)
+        
         
     def populate_box(self):
         """Place atoms at random positions within the box."""
