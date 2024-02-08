@@ -33,7 +33,7 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
         self.tau_press = self.nondimensionalise_units(self.tau_press, "time")
 
     def run(self):
-        """Perform the loop over time."""
+        """Perform the loop over time.
         for self.step in range(0, self.maximum_steps+1):
             self.integrate_equation_of_motion()
             self.wrap_in_box()
@@ -43,6 +43,7 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
                 self.apply_berendsen_barostat()
             self.update_log()
             self.update_dump()
+        """
         self.write_lammps_data(filename="final.data")
 
     def integrate_equation_of_motion(self):

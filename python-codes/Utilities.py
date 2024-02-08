@@ -13,10 +13,16 @@ class Utilities:
         super().__init__(*args, **kwargs)
 
     def calculate_kinetic_energy(self):
-        self.Ekin = np.sum(self.atom_mass*np.sum(self.atoms_velocities**2, axis=1)/2)
+        """Calculate the kinetic energy based on the velocities of the atoms.
+        $Ekin = \sum_{i=1}^Natom 1/2 m_i v_i^2$
+        """
+        self.Ekin = np.sum(self.atoms_mass * (self.atoms_velocities.T)**2) / 2
 
     def calculate_temperature(self):
-        """Follow the expression given in the LAMMPS documentation"""
+        """ Follow the expression given in the LAMMPS documentation
+        $Ndof = Ndim * Natom - Ndim$
+        $T(t) = \sum_{i=1}^Natom \dfrac{m_i v_i^2 (t)}{k_\text{B} Ndof}$
+        """
         self.calculate_kinetic_energy()
         Ndof = self.dimensions*self.total_number_atoms-self.dimensions
         self.temperature = 2*self.Ekin/Ndof

@@ -26,9 +26,9 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         self.mu = mu
         super().__init__(*args, **kwargs)
 
-        self.cut_off = self.nondimensionalise_units(self.cut_off, "distance")
-        self.displace_mc = self.nondimensionalise_units(self.displace_mc, "distance")
-        self.mu = self.nondimensionalise_units(self.mu, "energy")
+        # self.cut_off = self.nondimensionalise_units(self.cut_off, "distance")
+        # self.displace_mc = self.nondimensionalise_units(self.displace_mc, "distance")
+        # self.mu = self.nondimensionalise_units(self.mu, "energy")
 
     def run(self):
         """Perform the loop over time."""
@@ -59,11 +59,11 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
 
     def calculate_Lambda(self, mass):
         """Estimate de Broglie wavelength in LJ units."""
-        m_kg = mass/cst.Avogadro*cst.milli*self.reference_mass
+        m_kg = mass/cst.Avogadro*cst.milli # tofix *self.reference_mass
         kB_kCal_mol_K = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo
         T_K = self.desired_temperature*self.reference_energy/kB_kCal_mol_K
         Lambda = cst.h/np.sqrt(2*np.pi*cst.Boltzmann*m_kg*T_K)/cst.angstrom
-        return self.nondimensionalise_units(Lambda, "distance")
+        return Lambda # self.nondimensionalise_units(Lambda, "distance")
 
     def monte_carlo_insert_delete(self):
         Epot = self.calculate_potential_energy(self.atoms_positions)
