@@ -75,7 +75,7 @@ class InitializeSimulation:
         self.initialize_box()
         self.initialize_atoms()
         self.populate_box()
-        self.give_velocity()
+        self.set_initial_velocity()
         self.write_lammps_data(filename="initial.data")
 
     def nondimensionalise_units(self, variable, type):
@@ -126,8 +126,7 @@ class InitializeSimulation:
                 box_boundaries[dim] = -L/2, L/2
             else:
                 box_boundaries[dim] = -self.Lx/2, self.Lx/2
-        # box_boundaries = self.nondimensionalise_units(box_boundaries, "distance")
-        self.box_boundaries = box_boundaries
+        self.box_boundaries = self.nondimensionalise_units(box_boundaries, "distance")
 
     def initialize_atoms(self):
         """Create initial atom array from input parameters"""
@@ -135,13 +134,18 @@ class InitializeSimulation:
         atoms_sigma = []
         atoms_epsilon = []
         atoms_mass = []
-        for sigma, epsilon, mass, number_atoms in zip(self.sigma, self.epsilon, self.atom_mass, self.number_atoms):
+        atoms_type = []
+        for sigma, epsilon, mass, number_atoms, type in zip(self.sigma, self.epsilon,
+                                                            self.atom_mass, self.number_atoms,
+                                                            np.arange(len(self.number_atoms))+1):
             atoms_sigma += [sigma] * number_atoms
             atoms_epsilon += [epsilon] * number_atoms
             atoms_mass += [mass] * number_atoms
+            atoms_type += [type] * number_atoms
         self.atoms_sigma = np.array(atoms_sigma)
         self.atoms_epsilon = np.array(atoms_epsilon)
         self.atoms_mass = np.array(atoms_mass)
+        self.atoms_type = np.array(atoms_type)
         
     def populate_box(self):
         """Place atoms at random positions within the box."""
@@ -153,7 +157,7 @@ class InitializeSimulation:
                 atoms_positions[:, dim] = np.random.random(self.total_number_atoms)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2    
         self.atoms_positions = atoms_positions
 
-    def give_velocity(self):
+    def set_initial_velocity(self):
         """Give velocity to atoms so that the initial temperature is the desired one."""
         if self.provided_velocities is not None:
             atoms_velocities = self.provided_velocities/self.reference_distance*self.reference_time

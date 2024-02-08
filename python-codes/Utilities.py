@@ -75,15 +75,21 @@ class Utilities:
     def evaluate_LJ_force(self):
         """Evaluate force based on LJ potential derivative."""
         forces = np.zeros((self.total_number_atoms,3))
+        box_size = np.diff(self.box_boundaries).reshape(3)
         for Ni in range(self.total_number_atoms-1):
             position_i = self.atoms_positions[Ni]
+            sigma_i = self.atoms_sigma[Ni]
+            epsilon_i = self.atoms_epsilon[Ni]
             for Nj in np.arange(Ni+1,self.total_number_atoms):
                 position_j = self.atoms_positions[Nj]
-                box_size = np.diff(self.box_boundaries).reshape(3)
+                sigma_j = self.atoms_sigma[Nj]
+                epsilon_j = self.atoms_epsilon[Nj]
+                sigma_ij = (sigma_i+sigma_j)/2
+                epsilon_ij = (epsilon_i+epsilon_j)/2
                 rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
                 rij = np.sqrt(np.sum(rij_xyz**2))
                 if rij < self.cut_off:
-                    dU_dr = 48/rij*(1/rij**12-0.5/rij**6)
+                    dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
                     forces[Ni] += dU_dr*rij_xyz/rij
                     forces[Nj] -= dU_dr*rij_xyz/rij
         return forces
@@ -91,15 +97,21 @@ class Utilities:
     def evaluate_LJ_matrix(self):
         """Evaluate force based on LJ potential derivative."""
         forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        box_size = np.diff(self.box_boundaries).reshape(3)
         for Ni in range(self.total_number_atoms-1):
             position_i = self.atoms_positions[Ni]
+            sigma_i = self.atoms_sigma[Ni]
+            epsilon_i = self.atoms_epsilon[Ni]
             for Nj in np.arange(Ni+1,self.total_number_atoms):
                 position_j = self.atoms_positions[Nj]
-                box_size = np.diff(self.box_boundaries).reshape(3)
+                sigma_j = self.atoms_sigma[Nj]
+                epsilon_j = self.atoms_epsilon[Nj]
+                sigma_ij = (sigma_i+sigma_j)/2
+                epsilon_ij = (epsilon_i+epsilon_j)/2
                 rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
                 rij = np.sqrt(np.sum(rij_xyz**2))
                 if rij < self.cut_off:
-                    dU_dr = 48/rij*(1/rij**12-0.5/rij**6)
+                    dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
                     forces[Ni][Nj] += dU_dr*rij_xyz/rij
         return forces
     
