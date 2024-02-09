@@ -18,7 +18,6 @@ class Outputs:
 
     def evaluate_temperature(self):
         """Measure temperature and convert in Kelvin."""
-        # Evaluate temperature (in K)
         self.calculate_temperature()
         kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
         return np.round(self.temperature*self.reference_energy/kB,2)
@@ -27,7 +26,7 @@ class Outputs:
         """Measure pressure and convert in atmosphere."""
         self.calculate_pressure()
         return np.round(self.pressure*self.reference_energy/self.reference_distance**3*cst.calorie*cst.kilo/cst.Avogadro/cst.angstrom**3/cst.atm, 2)
-
+    
     def evaluate_volume(self):
         """Measure volume and convert in Angstrom 3"""
         return np.round(np.prod(np.diff(self.box_boundaries))*self.reference_distance**3)
@@ -57,7 +56,7 @@ class Outputs:
                 if self.step == 0:
                     print("step N temp epot ekin press vol")
                 print(self.step,
-                      self.number_atoms,
+                      self.total_number_atoms,
                       temperature,
                       '%.2E' % Decimal(epot),
                       '%.2E' % Decimal(ekin),
@@ -89,19 +88,26 @@ class Outputs:
                 f.write("ITEM: TIMESTEP\n")
                 f.write(str(self.step) + "\n")
                 f.write("ITEM: NUMBER OF ATOMS\n")
-                f.write(str(self.number_atoms) + "\n")
+                f.write(str(self.total_number_atoms) + "\n")
                 f.write("ITEM: BOX BOUNDS pp pp pp\n")
                 for dim in np.arange(self.dimensions):
-                    f.write(str(self.box_boundaries[dim][0]*self.reference_distance) + " " + str(self.box_boundaries[dim][1]*self.reference_distance) + "\n")
+                    f.write(str(self.box_boundaries[dim][0]*self.reference_distance)
+                            + " " + str(self.box_boundaries[dim][1]*self.reference_distance) + "\n")
                 f.write("ITEM: ATOMS id type x y z vx vy vz\n")
                 cpt = 1
                 atoms_positions = copy.deepcopy(self.atoms_positions)
                 if velocity:
                     atoms_velocities = copy.deepcopy(self.atoms_velocities)
                 else:
-                    atoms_velocities = np.zeros((self.number_atoms, self.dimensions))
-                for xyz, vxyz in zip(atoms_positions, atoms_velocities):
-                    f.write(str(cpt) + " " + str(1) + " " +str(xyz[0]*self.reference_distance)+" "+str(xyz[1]*self.reference_distance)+" "+str(xyz[2]*self.reference_distance) + " " +str(vxyz[0]*self.reference_distance/self.reference_time)+" "+str(vxyz[1]*self.reference_distance/self.reference_time)+" "+str(vxyz[2]*self.reference_distance/self.reference_time)+"\n") 
+                    atoms_velocities = np.zeros((self.total_number_atoms, self.dimensions))
+                for type, xyz, vxyz in zip(self.atoms_type, atoms_positions, atoms_velocities):
+                    f.write(str(cpt) + " " + str(type)
+                            + " " + str(xyz[0]*self.reference_distance)
+                            + " " + str(xyz[1]*self.reference_distance)
+                            + " " + str(xyz[2]*self.reference_distance)
+                            + " " + str(vxyz[0]*self.reference_distance/self.reference_time)
+                            + " " + str(vxyz[1]*self.reference_distance/self.reference_time)
+                            + " " + str(vxyz[2]*self.reference_distance/self.reference_time)+"\n") 
                     cpt += 1
                 f.close()
 
@@ -109,7 +115,7 @@ class Outputs:
         """Write a LAMMPS data file containing atoms positions and velocities"""
         f = open(filename, "w")
         f.write('# LAMMPS data file \n\n')
-        f.write(str(self.number_atoms)+' atoms\n')
+        f.write(str(self.total_number_atoms)+' atoms\n')
         f.write('1 atom types\n')
         f.write('\n')
         for LminLmax, dim in zip(self.box_boundaries*self.reference_distance, ["x", "y", "z"]):

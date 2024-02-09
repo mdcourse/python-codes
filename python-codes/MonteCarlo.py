@@ -47,7 +47,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         beta =  1/self.desired_temperature
         Epot = self.calculate_potential_energy(self.atoms_positions)
         trial_atoms_positions = copy.deepcopy(self.atoms_positions)
-        atom_id = np.random.randint(self.number_atoms)
+        atom_id = np.random.randint(self.total_number_atoms)
         trial_atoms_positions[atom_id] += (np.random.random(3)-0.5)*self.displace_mc
         trial_Epot = self.calculate_potential_energy(trial_atoms_positions)
         acceptation_probability = np.min([1, np.exp(-beta*(trial_Epot-Epot))])
@@ -59,7 +59,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
 
     def calculate_Lambda(self, mass):
         """Estimate de Broglie wavelength in LJ units."""
-        m_kg = mass/cst.Avogadro*cst.milli*self.reference_mass
+        m_kg = mass/cst.Avogadro*cst.milli # tofix *self.reference_mass
         kB_kCal_mol_K = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo
         T_K = self.desired_temperature*self.reference_energy/kB_kCal_mol_K
         Lambda = cst.h/np.sqrt(2*np.pi*cst.Boltzmann*m_kg*T_K)/cst.angstrom
@@ -69,20 +69,20 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         Epot = self.calculate_potential_energy(self.atoms_positions)
         trial_atoms_positions = copy.deepcopy(self.atoms_positions)
         if np.random.random() < 0.5:
-            number_atoms = self.number_atoms + 1
+            total_number_atoms = self.total_number_atoms + 1
             atom_position = np.zeros((1, self.dimensions))
             for dim in np.arange(self.dimensions):
                 atom_position[:, dim] = np.random.random(1)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2
             trial_atoms_positions = np.vstack([trial_atoms_positions, atom_position])
-            trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = number_atoms)
+            trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = total_number_atoms)
             Lambda = self.calculate_Lambda(self.atom_mass)
             volume = np.prod(np.diff(self.box_boundaries))
             beta = 1/self.desired_temperature
             acceptation_probability = np.min([1, volume/(Lambda**self.dimensions*(self.number_atoms + 1))*np.exp(beta*(self.mu-trial_Epot+Epot))])
         else:
-            number_atoms = self.number_atoms - 1
+            number_atoms = self.total_number_atoms - 1
             if number_atoms > 0:
-                atom_id = np.random.randint(self.number_atoms)
+                atom_id = np.random.randint(self.total_number_atoms)
                 trial_atoms_positions = np.delete(trial_atoms_positions, atom_id, axis=0)
                 trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = number_atoms)
                 Lambda = self.calculate_Lambda(self.atom_mass)
@@ -94,6 +94,6 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         if np.random.random() < acceptation_probability:
             self.atoms_positions = trial_atoms_positions
             self.Epot = trial_Epot
-            self.number_atoms = number_atoms
+            self.total_number_atoms = number_atoms # will have to be fixed ...
         else:
             self.Epot = Epot
