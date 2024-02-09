@@ -34,28 +34,27 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         """Perform the loop over time."""
         
         for self.step in range(0, self.maximum_steps+1):
-            if self.displace_mc is not None:
-                self.monte_carlo_displacement()
-            if self.mu is not None:
-                self.monte_carlo_insert_delete()
+            self.monte_carlo_displacement()
+            self.monte_carlo_insert_delete()
             self.wrap_in_box()
             self.update_log()
             self.update_dump(velocity=False)
         self.write_lammps_data(filename="final.data")
 
     def monte_carlo_displacement(self):
-        beta =  1/self.desired_temperature
-        Epot = self.calculate_potential_energy(self.atoms_positions)
-        trial_atoms_positions = copy.deepcopy(self.atoms_positions)
-        atom_id = np.random.randint(self.total_number_atoms)
-        trial_atoms_positions[atom_id] += (np.random.random(3)-0.5)*self.displace_mc
-        trial_Epot = self.calculate_potential_energy(trial_atoms_positions)
-        acceptation_probability = np.min([1, np.exp(-beta*(trial_Epot-Epot))])
-        if np.random.random() <= acceptation_probability:
-            self.atoms_positions = trial_atoms_positions
-            self.Epot = trial_Epot
-        else:
-            self.Epot = Epot 
+        if self.displace_mc is not None:
+            beta =  1/self.desired_temperature
+            Epot = self.calculate_potential_energy(self.atoms_positions)
+            trial_atoms_positions = copy.deepcopy(self.atoms_positions)
+            atom_id = np.random.randint(self.total_number_atoms)
+            trial_atoms_positions[atom_id] += (np.random.random(3)-0.5)*self.displace_mc
+            trial_Epot = self.calculate_potential_energy(trial_atoms_positions)
+            acceptation_probability = np.min([1, np.exp(-beta*(trial_Epot-Epot))])
+            if np.random.random() <= acceptation_probability:
+                self.atoms_positions = trial_atoms_positions
+                self.Epot = trial_Epot
+            else:
+                self.Epot = Epot 
 
     def calculate_Lambda(self, mass):
         """Estimate de Broglie wavelength in LJ units."""
@@ -66,34 +65,35 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         return self.nondimensionalise_units(Lambda, "distance")
 
     def monte_carlo_insert_delete(self):
-        Epot = self.calculate_potential_energy(self.atoms_positions)
-        trial_atoms_positions = copy.deepcopy(self.atoms_positions)
-        if np.random.random() < 0.5:
-            total_number_atoms = self.total_number_atoms + 1
-            atom_position = np.zeros((1, self.dimensions))
-            for dim in np.arange(self.dimensions):
-                atom_position[:, dim] = np.random.random(1)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2
-            trial_atoms_positions = np.vstack([trial_atoms_positions, atom_position])
-            trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = total_number_atoms)
-            Lambda = self.calculate_Lambda(self.atom_mass)
-            volume = np.prod(np.diff(self.box_boundaries))
-            beta = 1/self.desired_temperature
-            acceptation_probability = np.min([1, volume/(Lambda**self.dimensions*(self.number_atoms + 1))*np.exp(beta*(self.mu-trial_Epot+Epot))])
-        else:
-            number_atoms = self.total_number_atoms - 1
-            if number_atoms > 0:
-                atom_id = np.random.randint(self.total_number_atoms)
-                trial_atoms_positions = np.delete(trial_atoms_positions, atom_id, axis=0)
-                trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = number_atoms)
+        if self.mu is not None:
+            Epot = self.calculate_potential_energy(self.atoms_positions)
+            trial_atoms_positions = copy.deepcopy(self.atoms_positions)
+            if np.random.random() < 0.5:
+                total_number_atoms = self.total_number_atoms + 1
+                atom_position = np.zeros((1, self.dimensions))
+                for dim in np.arange(self.dimensions):
+                    atom_position[:, dim] = np.random.random(1)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2
+                trial_atoms_positions = np.vstack([trial_atoms_positions, atom_position])
+                trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = total_number_atoms)
                 Lambda = self.calculate_Lambda(self.atom_mass)
                 volume = np.prod(np.diff(self.box_boundaries))
                 beta = 1/self.desired_temperature
-                acceptation_probability = np.min([1, (Lambda**self.dimensions*(self.number_atoms)/volume)*np.exp(-beta*(self.mu+trial_Epot-Epot))])
+                acceptation_probability = np.min([1, volume/(Lambda**self.dimensions*(self.number_atoms + 1))*np.exp(beta*(self.mu-trial_Epot+Epot))])
             else:
-                acceptation_probability = 0
-        if np.random.random() < acceptation_probability:
-            self.atoms_positions = trial_atoms_positions
-            self.Epot = trial_Epot
-            self.total_number_atoms = number_atoms # will have to be fixed ...
-        else:
-            self.Epot = Epot
+                number_atoms = self.total_number_atoms - 1
+                if number_atoms > 0:
+                    atom_id = np.random.randint(self.total_number_atoms)
+                    trial_atoms_positions = np.delete(trial_atoms_positions, atom_id, axis=0)
+                    trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = number_atoms)
+                    Lambda = self.calculate_Lambda(self.atom_mass)
+                    volume = np.prod(np.diff(self.box_boundaries))
+                    beta = 1/self.desired_temperature
+                    acceptation_probability = np.min([1, (Lambda**self.dimensions*(self.number_atoms)/volume)*np.exp(-beta*(self.mu+trial_Epot-Epot))])
+                else:
+                    acceptation_probability = 0
+            if np.random.random() < acceptation_probability:
+                self.atoms_positions = trial_atoms_positions
+                self.Epot = trial_Epot
+                self.total_number_atoms = number_atoms # will have to be fixed ...
+            else:
+                self.Epot = Epot

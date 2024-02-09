@@ -10,8 +10,12 @@ class Outputs:
     def __init__(self,
                  thermo = None,
                  dump = None,
+                 thermo_minimize = 1,
+                 dumping_minimize = 1,
                  *args,
                  **kwargs):
+        self.thermo_minimize = thermo_minimize
+        self.dumping_minimize = dumping_minimize
         self.thermo = thermo
         self.dump = dump
         super().__init__(*args, **kwargs)
@@ -44,31 +48,42 @@ class Outputs:
     def evaluate_density(self):
         return self.number_atoms/np.round(np.prod(np.diff(self.box_boundaries))*self.reference_distance**3)
 
-    def update_log(self):
-        if self.thermo is not None:
-            if (self.step % self.thermo == 0) | (self.step == 0):
-                temperature = self.evaluate_temperature()
-                pressure = self.evaluate_pressure()
-                volume = self.evaluate_volume()
-                epot = self.evaluate_potential_energy()
-                ekin = self.evaluate_kinetic_energy()
-                density = self.evaluate_density()
-                if self.step == 0:
-                    print("step N temp epot ekin press vol")
-                print(self.step,
-                      self.total_number_atoms,
-                      temperature,
-                      '%.2E' % Decimal(epot),
-                      '%.2E' % Decimal(ekin),
-                      '%.2E' % Decimal(pressure),
-                      '%.2E' % Decimal(volume),
-                      )
-                self.write_data_file(temperature, "temperature.dat")
-                self.write_data_file(pressure, "pressure.dat")
-                self.write_data_file(volume, "volume.dat")
-                self.write_data_file(epot, "Epot.dat")
-                self.write_data_file(ekin, "Ekin.dat")
-                self.write_data_file(density, "density.dat")
+    def update_log(self, minimization = False):
+        if minimization:
+            if self.thermo_minimize is not None:
+                if (self.step % self.thermo_minimize == 0) | (self.step == 0):
+                    epot = self.evaluate_potential_energy()
+                    if self.step == 0:
+                        row = ["step", "epot", "maxF"]
+                        print("{:>5} {:>5} {:>5}".format(*row))
+                    row = [self.step, epot, self.max_forces]
+                    print("{:>5} {:>5} {:>5}".format(*row))
+        else:
+            if self.thermo is not None:
+                if (self.step % self.thermo == 0) | (self.step == 0):
+                    temperature = self.evaluate_temperature()
+                    pressure = self.evaluate_pressure()
+                    volume = self.evaluate_volume()
+                    epot = self.evaluate_potential_energy()
+                    ekin = self.evaluate_kinetic_energy()
+                    density = self.evaluate_density()
+                    if self.step == 0:
+                        row = ["step", "N", "temp", "epot", "ekin", "press", "vol"]
+                        print("{:>5} {:>5} {:>5} {:>5} {:>5} {:>5} {:>5}".format(*row))
+                    row = [self.step,
+                        self.total_number_atoms,
+                        temperature,
+                        epot,
+                        ekin,
+                        pressure,
+                        volume]
+                    print("{:>5} {:>5} {:>5} {:>5} {:>5} {:>5} {:>5}".format(*row))
+                    self.write_data_file(temperature, "temperature.dat")
+                    self.write_data_file(pressure, "pressure.dat")
+                    self.write_data_file(volume, "volume.dat")
+                    self.write_data_file(epot, "Epot.dat")
+                    self.write_data_file(ekin, "Ekin.dat")
+                    self.write_data_file(density, "density.dat")
 
     def write_data_file(self, output_value, filename):
         if self.step == 0:
@@ -78,9 +93,13 @@ class Outputs:
         myfile.write(str(self.step) + " " + str(output_value) + "\n")
         myfile.close()
 
-    def update_dump(self, filename="dump.lammpstrj", velocity=True):
+    def update_dump(self, filename, velocity = True, minimization = False):
         if self.dump is not None:
-            if self.step % self.dump == 0:
+            if minimization:
+                dumping = self.dumping_minimize
+            else:
+                dumping = self.dump
+            if self.step % dumping == 0:
                 if self.step==0:
                     f = open(filename, "w")
                 else:

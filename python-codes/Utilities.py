@@ -12,6 +12,25 @@ class Utilities:
                  **kwargs):
         super().__init__(*args, **kwargs)
 
+    def perform_energy_minimization(self, initial_displacement = 0.01):
+        """Perform energy minimmization using the steepest descent method"""
+        if self.minimization_steps is not None:
+            for self.step in range(0, self.minimization_steps+1):
+                Epot = self.calculate_potential_energy(self.atoms_positions)
+                trial_atoms_positions = copy.deepcopy(self.atoms_positions)
+                forces = self.evaluate_LJ_force()
+                self.max_forces = np.max(np.abs(forces))
+                trial_atoms_positions = self.atoms_positions + forces/self.max_forces*initial_displacement
+                trial_Epot = self.calculate_potential_energy(trial_atoms_positions)
+                if trial_Epot<Epot: # accept new position
+                    self.atoms_positions = trial_atoms_positions
+                    self.wrap_in_box()
+                    initial_displacement *= 1.2
+                else:
+                    initial_displacement *= 0.2
+                self.update_log(minimization = True)
+                self.update_dump(filename="dump.min.lammpstrj", velocity=False, minimization = True)
+
     def calculate_kinetic_energy(self):
         """Calculate the kinetic energy based on the velocities of the atoms.
         $Ekin = \sum_{i=1}^Natom 1/2 m_i v_i^2$

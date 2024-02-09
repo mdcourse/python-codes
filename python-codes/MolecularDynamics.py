@@ -15,14 +15,16 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
                 maximum_steps,
                 tau_temp = None,
                 tau_press = None,
+                minimization_steps = None,
                 cut_off = 10,
                 time_step=1,
                 *args,
                 **kwargs,
                 ):
         self.maximum_steps = maximum_steps
-        self.tau_temp = tau_temp  
+        self.tau_temp = tau_temp
         self.tau_press = tau_press
+        self.minimization_steps = minimization_steps
         self.cut_off = cut_off
         self.time_step = time_step
         super().__init__(*args, **kwargs)
@@ -33,21 +35,20 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
         self.tau_press = self.nondimensionalise_units(self.tau_press, "time")
 
     def run(self):
+        self.perform_energy_minimization()
         for self.step in range(0, self.maximum_steps+1):
             self.integrate_equation_of_motion()
             self.wrap_in_box()
-            if self.tau_temp is not None:
-                self.apply_berendsen_thermostat()
-            if self.tau_press is not None:
-                self.apply_berendsen_barostat()
+            self.apply_berendsen_thermostat()
+            self.apply_berendsen_barostat()
             self.update_log()
-            self.update_dump()
-        self.write_lammps_data(filename="final.data")
+            self.update_dump(filename = "dump.md.lammpstrj")
+        self.write_lammps_data(filename = "final.data")
 
     def integrate_equation_of_motion(self):
         """Integrate equation of motion using half-step velocity"""
         if self.step == 0:
-            self.atoms_accelerations = (self.evaluate_LJ_force().T / self.atoms_mass).T
+            self.atoms_accelerations = (self.evaluate_LJ_force().T/self.atoms_mass).T
         atoms_velocity_Dt2 = self.atoms_velocities + self.atoms_accelerations*self.time_step/2
         self.atoms_positions = self.atoms_positions + atoms_velocity_Dt2*self.time_step
         self.atoms_accelerations = (self.evaluate_LJ_force().T/self.atoms_mass).T
@@ -55,13 +56,15 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
 
     def apply_berendsen_thermostat(self):
         """Rescale velocities based on Berendsen thermostat."""
-        self.calculate_temperature()
-        scale = np.sqrt(1+self.time_step*((self.desired_temperature/self.temperature)-1)/self.tau_temp)
-        self.atoms_velocities *= scale
+        if self.tau_temp is not None:
+            self.calculate_temperature()
+            scale = np.sqrt(1+self.time_step*((self.desired_temperature/self.temperature)-1)/self.tau_temp)
+            self.atoms_velocities *= scale
 
     def apply_berendsen_barostat(self):
         """Rescale box size based on Berendsten barostat."""
-        self.calculate_pressure()
-        scale = np.sqrt(1+self.time_step*((self.pressure/self.desired_pressure)-1)/self.tau_press)
-        self.box_boundaries *= scale
-        self.atoms_positions *= scale
+        if self.tau_press is not None:
+            self.calculate_pressure()
+            scale = np.sqrt(1+self.time_step*((self.pressure/self.desired_pressure)-1)/self.tau_press)
+            self.box_boundaries *= scale
+            self.atoms_positions *= scale
