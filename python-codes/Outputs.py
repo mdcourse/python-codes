@@ -131,26 +131,27 @@ class Outputs:
                 f.close()
 
     def write_lammps_data(self, filename="lammps.data"):
-        """Write a LAMMPS data file containing atoms positions and velocities"""
+        """Write a LAMMPS-format data file containing atoms positions and velocities"""
         f = open(filename, "w")
         f.write('# LAMMPS data file \n\n')
-        f.write(str(self.total_number_atoms)+' atoms\n')
-        f.write('1 atom types\n')
+        f.write("%d %s"%(self.total_number_atoms, 'atoms\n')) 
+        f.write("%d %s"%(np.max(self.atoms_type), 'atom types\n')) 
         f.write('\n')
         for LminLmax, dim in zip(self.box_boundaries*self.reference_distance, ["x", "y", "z"]):
-            f.write(str(LminLmax[0])+' '+str(LminLmax[1])+' '+dim+'lo ' + dim +  'hi\n')
+            f.write("%.3f %.3f %s %s"%(LminLmax[0],LminLmax[1], dim+'lo', dim+'hi\n')) 
         f.write('\n')
         f.write('Atoms\n')
         f.write('\n')
         cpt = 1
-        for xyz in self.atoms_positions*self.reference_distance:
-            f.write(str(cpt)+ ' 1 ' + str(xyz[0]) + ' ' + str(xyz[1]) + ' ' + str(xyz[2]) +'\n')
+        for type, xyz in zip(self.atoms_type, self.atoms_positions*self.reference_distance):
+            f.write("%d %d %.3f %.3f %.3f %s"%(cpt, type, xyz[0], xyz[1], xyz[2], '\n')) 
             cpt += 1
         f.write('\n')
         f.write('Velocities\n')
         f.write('\n')
         cpt = 1
         for vxyz in self.atoms_velocities*self.reference_distance/self.reference_time:
-            f.write(str(cpt) + ' ' + str(vxyz[0]) + ' ' + str(vxyz[1]) + ' ' + str(vxyz[2]) +'\n')
+            f.write("%d %.3f %.3f %.3f %s"%(cpt, vxyz[0], vxyz[1], vxyz[2], '\n')) 
             cpt += 1
         f.close()
+
