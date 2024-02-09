@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 from InitializeSimulation import InitializeSimulation
@@ -11,18 +11,18 @@ from MolecularDynamics import MolecularDynamics
 from MonteCarlo import MonteCarlo
 
 
-# In[2]:
+# In[ ]:
 
 
 import numpy as np
 
 
-# In[3]:
+# In[ ]:
 
 
-self = MolecularDynamics(number_atoms=[200, 100],
-                      epsilon=[1, 0.4],
-                      sigma=[1, 3],
+self = MolecularDynamics(number_atoms=[300, 100],
+                      epsilon=[1, 1],
+                      sigma=[1, 5],
                       atom_mass= [1, 1],
                       Lx=30,
                       Ly=30,
@@ -33,6 +33,7 @@ self = MolecularDynamics(number_atoms=[200, 100],
                       thermo = 100,
                       dump = 100,  
                       tau_temp = 100,
+                      tau_press= 1000,
                       time_step=1,
                       seed=219817,
                       )

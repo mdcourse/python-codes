@@ -54,10 +54,8 @@ class Outputs:
                 if (self.step % self.thermo_minimize == 0) | (self.step == 0):
                     epot = self.evaluate_potential_energy()
                     if self.step == 0:
-                        row = ["step", "epot", "maxF"]
-                        print("{:>5} {:>5} {:>5}".format(*row))
-                    row = [self.step, epot, self.max_forces]
-                    print("{:>5} {:>5} {:>5}".format(*row))
+                        print("%s %s %s"%("step", "epot", "maxF")) 
+                    print("%d %.3f %.3f"%(self.step, epot, self.max_forces)) 
         else:
             if self.thermo is not None:
                 if (self.step % self.thermo == 0) | (self.step == 0):
