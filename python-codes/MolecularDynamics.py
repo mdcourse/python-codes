@@ -36,6 +36,9 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
 
     def run(self):
         self.perform_energy_minimization()
+
+        print("START MD", np.max(self.atoms_positions))
+
         for self.step in range(0, self.maximum_steps+1):
             self.integrate_equation_of_motion()
             self.wrap_in_box()

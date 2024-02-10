@@ -48,10 +48,10 @@ class InitializeSimulation:
         self.reference_distance = self.sigma[0]
         self.reference_energy = self.epsilon[0]
         self.reference_mass = self.atom_mass[0]
-
         self.reference_time = np.sqrt((self.reference_mass/cst.kilo/cst.Avogadro)
                                       *(self.reference_distance*cst.angstrom)**2
                                       /(self.reference_energy*cst.calorie*cst.kilo/cst.Avogadro))/cst.femto
+        
         self.Lx = self.nondimensionalise_units(self.Lx, "distance")
         self.Ly = self.nondimensionalise_units(self.Ly, "distance")
         self.Lz = self.nondimensionalise_units(self.Lz, "distance")
@@ -149,10 +149,10 @@ class InitializeSimulation:
         
     def populate_box(self):
         """Place atoms at random positions within the box."""
-        atoms_positions = np.zeros((self.total_number_atoms, self.dimensions))
         if self.provided_positions is not None: # tofix : do we really want provided positions ?
             atoms_positions = self.provided_positions/self.reference_distance
         else:
+            atoms_positions = np.zeros((self.total_number_atoms, self.dimensions))
             for dim in np.arange(self.dimensions):
                 atoms_positions[:, dim] = np.random.random(self.total_number_atoms)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2    
         self.atoms_positions = atoms_positions
@@ -160,12 +160,9 @@ class InitializeSimulation:
     def set_initial_velocity(self):
         """Give velocity to atoms so that the initial temperature is the desired one."""
         if self.provided_velocities is not None:
-            atoms_velocities = self.provided_velocities/self.reference_distance*self.reference_time
+            self.atoms_velocities = self.provided_velocities/self.reference_distance*self.reference_time
         else:
-            atoms_velocities = np.zeros((self.total_number_atoms, self.dimensions))
-            for dim in np.arange(self.dimensions):
-                atoms_velocities[:, dim] = np.random.normal(size=self.total_number_atoms)
-        self.atoms_velocities = atoms_velocities
-        self.calculate_temperature()
-        scale = np.sqrt(1+((self.desired_temperature/self.temperature)-1))
-        self.atoms_velocities *= scale
+            self.atoms_velocities = np.random.normal(size=(self.total_number_atoms, self.dimensions))
+            self.calculate_temperature()
+            scale = np.sqrt(1+((self.desired_temperature/self.temperature)-1))
+            self.atoms_velocities *= scale

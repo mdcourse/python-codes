@@ -112,19 +112,20 @@ class Outputs:
                             + " " + str(self.box_boundaries[dim][1]*self.reference_distance) + "\n")
                 f.write("ITEM: ATOMS id type x y z vx vy vz\n")
                 cpt = 1
-                atoms_positions = copy.deepcopy(self.atoms_positions)
+                atoms_positions = copy.deepcopy(self.atoms_positions) * self.reference_distance
                 if velocity:
-                    atoms_velocities = copy.deepcopy(self.atoms_velocities)
+                    atoms_velocities = copy.deepcopy(self.atoms_velocities) \
+                        * self.reference_distance/self.reference_time 
                 else:
                     atoms_velocities = np.zeros((self.total_number_atoms, self.dimensions))
                 for type, xyz, vxyz in zip(self.atoms_type, atoms_positions, atoms_velocities):
                     f.write(str(cpt) + " " + str(type)
-                            + " " + str(xyz[0]*self.reference_distance)
-                            + " " + str(xyz[1]*self.reference_distance)
-                            + " " + str(xyz[2]*self.reference_distance)
-                            + " " + str(vxyz[0]*self.reference_distance/self.reference_time)
-                            + " " + str(vxyz[1]*self.reference_distance/self.reference_time)
-                            + " " + str(vxyz[2]*self.reference_distance/self.reference_time)+"\n") 
+                            + " " + str(np.round(xyz[0],3))
+                            + " " + str(np.round(xyz[1],3))
+                            + " " + str(np.round(xyz[2],3))
+                            + " " + str(vxyz[0])
+                            + " " + str(vxyz[1])
+                            + " " + str(vxyz[2])+"\n") 
                     cpt += 1
                 f.close()
 

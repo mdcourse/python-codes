@@ -82,13 +82,17 @@ class Utilities:
         return np.sqrt(rij2)
 
     def calculate_potential_energy(self, atoms_positions, number_atoms = None):
-        """Calculate potential energy assuming Lennard-Jones potential interaction."""
+        """Calculate potential energy from Lennard-Jones potential."""
         energy_potential = 0
-        for position_i in atoms_positions:
+        for position_i, sigma_i, epsilon_i in zip(atoms_positions, self.atoms_sigma, self.atoms_epsilon):
             r = self.calculate_r(position_i, atoms_positions, number_atoms)
-            energy_potential_i = np.sum(4*(1/np.power(r[r>0], 12)-1/np.power(r[r>0], 6)))
+            sigma_j = self.atoms_sigma
+            epsilon_j = self.atoms_epsilon
+            sigma_ij = np.array((sigma_i+sigma_j)/2)
+            epsilon_ij = np.array((epsilon_i+epsilon_j)/2)
+            energy_potential_i = np.sum(4*epsilon_ij[r>0]*(np.power(sigma_ij[r>0]/r[r>0], 12)-np.power(sigma_ij[r>0]/r[r>0], 6)))
             energy_potential += energy_potential_i
-        energy_potential /= 2 # Avoid counting potential energy twice
+        energy_potential /= 2 # To avoid counting potential energy twice
         return energy_potential
 
     def evaluate_LJ_force(self):
@@ -101,13 +105,13 @@ class Utilities:
             epsilon_i = self.atoms_epsilon[Ni]
             for Nj in np.arange(Ni+1,self.total_number_atoms):
                 position_j = self.atoms_positions[Nj]
-                sigma_j = self.atoms_sigma[Nj]
-                epsilon_j = self.atoms_epsilon[Nj]
-                sigma_ij = (sigma_i+sigma_j)/2
-                epsilon_ij = (epsilon_i+epsilon_j)/2
                 rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
                 rij = np.sqrt(np.sum(rij_xyz**2))
                 if rij < self.cut_off:
+                    sigma_j = self.atoms_sigma[Nj]
+                    epsilon_j = self.atoms_epsilon[Nj]
+                    sigma_ij = (sigma_i+sigma_j)/2
+                    epsilon_ij = (epsilon_i+epsilon_j)/2
                     dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
                     forces[Ni] += dU_dr*rij_xyz/rij
                     forces[Nj] -= dU_dr*rij_xyz/rij
