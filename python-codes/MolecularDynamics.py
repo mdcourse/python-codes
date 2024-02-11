@@ -31,10 +31,10 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
         self.neighbor = neighbor
         super().__init__(*args, **kwargs)
 
-        self.cut_off = self.nondimensionalise_units(self.cut_off, "distance")
-        self.time_step = self.nondimensionalise_units(self.time_step, "time")
-        self.tau_temp = self.nondimensionalise_units(self.tau_temp, "time")
-        self.tau_press = self.nondimensionalise_units(self.tau_press, "time")
+        self.cut_off /= self.reference_distance
+        self.time_step /= self.reference_time
+        self.tau_temp /= self.reference_time
+        self.tau_press /= self.reference_time
 
     def run(self):
         self.perform_energy_minimization()

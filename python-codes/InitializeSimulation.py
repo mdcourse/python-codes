@@ -44,58 +44,56 @@ class InitializeSimulation:
             np.random.seed(self.seed)
 
         self.assert_correctness_parameters()
-
-        self.reference_distance = self.sigma[0]
-        self.reference_energy = self.epsilon[0]
-        self.reference_mass = self.atom_mass[0]
-        self.reference_time = np.sqrt((self.reference_mass/cst.kilo/cst.Avogadro)
-                                      *(self.reference_distance*cst.angstrom)**2
-                                      /(self.reference_energy*cst.calorie*cst.kilo/cst.Avogadro))/cst.femto
-        
-        self.Lx = self.nondimensionalise_units(self.Lx, "distance")
-        self.Ly = self.nondimensionalise_units(self.Ly, "distance")
-        self.Lz = self.nondimensionalise_units(self.Lz, "distance")
-
-        epsilon = []
-        for epsilon0 in self.epsilon:
-            epsilon.append(self.nondimensionalise_units(epsilon0, "energy"))
-        self.epsilon = epsilon
-        sigma = []
-        for sigma0 in self.sigma:
-            sigma.append(self.nondimensionalise_units(sigma0, "distance"))
-        self.sigma = np.array(sigma)
-        atom_mass = []
-        for atom_mass0 in self.atom_mass:
-            atom_mass.append(self.nondimensionalise_units(atom_mass0, "mass"))
-        self.atom_mass = np.array(atom_mass)
-
-        self.desired_temperature = self.nondimensionalise_units(self.desired_temperature, "temperature")
-        self.desired_pressure = self.nondimensionalise_units(self.desired_pressure, "pressure")
-        
+        self.calculate_LJ_prefactors()
+        self.nondimensionalize_units()
         self.initialize_box()
         self.initialize_atoms()
         self.populate_box()
         self.set_initial_velocity()
         self.write_lammps_data(filename="initial.data")
 
-    def nondimensionalise_units(self, variable, type):
-        self.kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
-        if variable is not None:
-            if type == "distance":
-                variable /= self.reference_distance
-            elif type == "energy":
-                variable /= self.reference_energy
-            elif type == "mass":
-                variable /= self.reference_mass
-            elif type == "temperature":
-                variable /= self.reference_energy/self.kB
-            elif type == "time":
-                variable /= self.reference_time
-            elif type == "pressure":
-                variable *= cst.atm*cst.angstrom**3*cst.Avogadro/cst.calorie/cst.kilo/self.reference_energy*self.reference_distance**3
-            else:
-                print("Unknown variable type", type)
-        return variable
+    def calculate_LJ_prefactors(self):
+        """Calculate LJ non-dimensional units.
+        
+        Distances, energies, and masses are normalized by
+        the $\sigma$, $\epsilon$, and $m$ parameters from the
+        first atom.
+        In addition:
+        - Times are normalized by $\sqrt{m \sigma^2 / \epsilon}$.
+        - Temperature are normalized by $\epsilon/k_\text{B}$, 
+          where $k_\text{B}$ is the Boltzmann constant.
+        - Pressures are normalized by $\epsilon/\sigma^3$.
+        """
+        self.reference_distance = self.sigma[0] # Angstrom
+        self.reference_energy = self.epsilon[0] # Kcal/mol
+        self.reference_mass = self.atom_mass[0] # g/mol
+        mass_kg = self.atom_mass[0]/cst.kilo/cst.Avogadro # kg
+        epsilon_J = self.epsilon[0]*cst.calorie*cst.kilo/cst.Avogadro # J
+        sigma_m = self.sigma[0]*cst.angstrom # m
+        time_s = np.sqrt(mass_kg*sigma_m**2/epsilon_J) # s
+        time_fs = time_s / cst.femto # fs
+        self.reference_time = time_fs # fs
+        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
+        self.reference_temperature = kB/self.epsilon[0] # K
+        pressure_pa = epsilon_J/sigma_m**3 # Pa
+        pressure_atm = pressure_pa/cst.atm # atm
+        self.reference_pressure = pressure_atm
+
+    def nondimensionalize_units(self):
+        """Use LJ prefactors to convert units into non-dimensional."""
+        self.Lx /= self.reference_distance
+        self.Ly /= self.reference_distance
+        self.Lz /= self.reference_distance
+        epsilon, sigma, atom_mass = [], [], []
+        for e0, s0, m0 in zip(self.epsilon, self.sigma, self.atom_mass):
+            epsilon.append(e0/self.reference_energy)
+            sigma.append(s0/self.reference_distance)
+            atom_mass.append(m0/self.reference_mass)
+        self.epsilon = epsilon
+        self.sigma = np.array(sigma)
+        self.atom_mass = np.array(atom_mass)
+        self.desired_temperature /= self.reference_temperature
+        self.desired_pressure /= self.reference_pressure
 
     def assert_correctness_parameters(self):
         """Assert that the parameters entered are correct"""
@@ -121,12 +119,14 @@ class InitializeSimulation:
         If Ly or Lz or both are None, then Lx is used
         along the y and z instead"""
         box_boundaries = np.zeros((self.dimensions, 2))
-        for dim, L in zip(range(self.dimensions), [self.Lx, self.Ly, self.Lz]):
+        for dim, L in zip(range(self.dimensions),
+                          [self.Lx, self.Ly, self.Lz]):
             if L is not None:
                 box_boundaries[dim] = -L/2, L/2
             else:
                 box_boundaries[dim] = -self.Lx/2, self.Lx/2
         self.box_boundaries = box_boundaries
+        self.box_size = np.diff(box_boundaries).reshape(3)
 
     def initialize_atoms(self):
         """Create initial atom array from input parameters"""

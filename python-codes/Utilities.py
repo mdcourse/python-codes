@@ -147,3 +147,22 @@ class Utilities:
                             a_list.append(Nj) 
                 neighbor_lists.append(a_list.copy())
             self.neighbor_lists = neighbor_lists
+
+    def convert_units(self, variable, type):
+        self.kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
+        if variable is not None:
+            if type == "distance":
+                variable /= self.reference_distance
+            elif type == "energy":
+                variable /= self.reference_energy
+            elif type == "mass":
+                variable /= self.reference_mass
+            elif type == "temperature":
+                variable /= self.reference_energy/self.kB
+            elif type == "time":
+                variable /= self.reference_time
+            elif type == "pressure":
+                variable *= cst.atm*cst.angstrom**3*cst.Avogadro/cst.calorie/cst.kilo/self.reference_energy*self.reference_distance**3
+            else:
+                print("Unknown variable type", type)
+        return variable

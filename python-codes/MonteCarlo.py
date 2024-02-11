@@ -26,9 +26,9 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         self.mu = mu
         super().__init__(*args, **kwargs)
 
-        self.cut_off = self.nondimensionalise_units(self.cut_off, "distance")
-        self.displace_mc = self.nondimensionalise_units(self.displace_mc, "distance")
-        self.mu = self.nondimensionalise_units(self.mu, "energy")
+        self.cut_off /= self.reference_distance
+        self.displace_mc /= self.reference_distance
+        self.mu /= self.reference_energy
 
     def run(self):
         """Perform the loop over time."""
