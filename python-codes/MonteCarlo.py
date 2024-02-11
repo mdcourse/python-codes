@@ -76,7 +76,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
                 for dim in np.arange(self.dimensions):
                     atom_position[:, dim] = np.random.random(1)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2
                 trial_atoms_positions = np.vstack([trial_atoms_positions, atom_position])
-                trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = total_number_atoms)
+                trial_Epot = self.calculate_potential_energy(trial_atoms_positions) # tocheck number_atoms = total_number_atoms)
                 Lambda = self.calculate_Lambda(self.atom_mass)
                 volume = np.prod(np.diff(self.box_boundaries))
                 beta = 1/self.desired_temperature
@@ -86,7 +86,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
                 if number_atoms > 0:
                     atom_id = np.random.randint(self.total_number_atoms)
                     trial_atoms_positions = np.delete(trial_atoms_positions, atom_id, axis=0)
-                    trial_Epot = self.calculate_potential_energy(trial_atoms_positions, number_atoms = number_atoms)
+                    trial_Epot = self.calculate_potential_energy(trial_atoms_positions) # tocheck number_atoms = number_atoms)
                     Lambda = self.calculate_Lambda(self.atom_mass)
                     volume = np.prod(np.diff(self.box_boundaries))
                     beta = 1/self.desired_temperature

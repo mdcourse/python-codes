@@ -12,8 +12,8 @@ class Utilities:
                  **kwargs):
         super().__init__(*args, **kwargs)
 
-    def perform_energy_minimization(self, initial_displacement = 0.01):
-        """Perform energy minimmization using the steepest descent method"""
+    def perform_energy_minimization(self, displacement = 0.01):
+        """Perform energy minimmization using the steepest descent method."""
         if self.minimization_steps is not None:
             for self.step in range(0, self.minimization_steps+1):
                 self.update_neighbor_lists()
@@ -21,14 +21,14 @@ class Utilities:
                 trial_atoms_positions = copy.deepcopy(self.atoms_positions)
                 forces = self.evaluate_LJ_force()
                 self.max_forces = np.max(np.abs(forces))
-                trial_atoms_positions = self.atoms_positions + forces/self.max_forces*initial_displacement
+                trial_atoms_positions = self.atoms_positions + forces/self.max_forces*displacement
                 trial_Epot = self.calculate_potential_energy(trial_atoms_positions)
                 if trial_Epot<Epot: # accept new position
                     self.atoms_positions = trial_atoms_positions
                     self.wrap_in_box()
-                    initial_displacement *= 1.2
-                else:
-                    initial_displacement *= 0.2
+                    displacement *= 1.2
+                else: # reject new position
+                    displacement *= 0.2
                 self.update_log(minimization = True)
                 self.update_dump(filename="dump.min.lammpstrj", velocity=False, minimization = True)
 
@@ -69,23 +69,17 @@ class Utilities:
             rij_matrix[Ni] = rij_xyz
         return rij_matrix
 
-    def calculate_r(self, position_i, positions_j, number_atoms = None):
+    def calculate_r(self, position_i, positions_j):
         """Calculate the shortest distance between position_i and positions_j."""
-        if number_atoms is None:
-            rij2 = np.zeros(self.total_number_atoms)
-        else:
-            rij2 = np.zeros(number_atoms)
         box_size = np.diff(self.box_boundaries).reshape(3)
-        rij = (np.remainder(position_i - positions_j + box_size/2., box_size) - box_size/2.).T
-        for dim in np.arange(self.dimensions):
-            rij2 += np.power(rij[dim, :], 2)
-        return np.sqrt(rij2)
+        rij = (np.remainder(position_i - positions_j + box_size/2., box_size) - box_size/2.)
+        return np.linalg.norm(rij, axis=1)
 
-    def calculate_potential_energy(self, atoms_positions, number_atoms = None):
+    def calculate_potential_energy(self, atoms_positions):
         """Calculate potential energy from Lennard-Jones potential."""
         energy_potential = 0
         for position_i, sigma_i, epsilon_i in zip(atoms_positions, self.atoms_sigma, self.atoms_epsilon):
-            r = self.calculate_r(position_i, atoms_positions, number_atoms)
+            r = self.calculate_r(position_i, atoms_positions)
             sigma_j = self.atoms_sigma
             epsilon_j = self.atoms_epsilon
             sigma_ij = np.array((sigma_i+sigma_j)/2)
@@ -149,7 +143,7 @@ class Utilities:
                                                 + box_size/2., box_size) \
                                                 - box_size/2.).T
                         rij = np.sqrt(np.sum(rij_xyz**2))
-                        if rij < self.cut_off: # tofix : a larger cut-off should be used
+                        if rij < (self.cut_off+2):
                             a_list.append(Nj) 
                 neighbor_lists.append(a_list.copy())
             self.neighbor_lists = neighbor_lists
