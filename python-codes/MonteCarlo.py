@@ -40,6 +40,8 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
             self.update_log()
             self.update_dump(velocity=False)
         self.write_lammps_data(filename="final.data")
+        self.write_lammps_parameters()
+        self.write_lammps_variables()
 
     def monte_carlo_displacement(self):
         if self.displace_mc is not None:

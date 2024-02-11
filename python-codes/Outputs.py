@@ -10,14 +10,16 @@ class Outputs:
     def __init__(self,
                  thermo = None,
                  dump = None,
-                 thermo_minimize = 1,
-                 dumping_minimize = 1,
+                 thermo_minimize = 5,
+                 dumping_minimize = 5,
+                 data_folder = "./",
                  *args,
                  **kwargs):
         self.thermo_minimize = thermo_minimize
         self.dumping_minimize = dumping_minimize
         self.thermo = thermo
         self.dump = dump
+        self.data_folder = data_folder
         super().__init__(*args, **kwargs)
 
     def evaluate_temperature(self):
@@ -85,9 +87,9 @@ class Outputs:
 
     def write_data_file(self, output_value, filename):
         if self.step == 0:
-            myfile = open(filename, "w")
+            myfile = open(self.data_folder + filename, "w")
         else:
-            myfile = open(filename, "a")
+            myfile = open(self.data_folder + filename, "a")
         myfile.write(str(self.step) + " " + str(output_value) + "\n")
         myfile.close()
 
@@ -99,9 +101,9 @@ class Outputs:
                 dumping = self.dump
             if self.step % dumping == 0:
                 if self.step==0:
-                    f = open(filename, "w")
+                    f = open(self.data_folder + filename, "w")
                 else:
-                    f = open(filename, "a")
+                    f = open(self.data_folder + filename, "a")
                 f.write("ITEM: TIMESTEP\n")
                 f.write(str(self.step) + "\n")
                 f.write("ITEM: NUMBER OF ATOMS\n")
@@ -154,3 +156,36 @@ class Outputs:
             cpt += 1
         f.close()
 
+    def write_lammps_parameters(self, filename="PARM.lammps"):
+        """Write a LAMMPS-format parameters file"""
+        f = open(filename, "w")
+        f.write('# LAMMPS parameter file \n\n')
+        for type, mass in zip(np.unique(self.atoms_type), self.atom_mass):
+            mass *= self.reference_mass
+            f.write("mass "+str(type)+" "+str(mass)+"\n")  
+        f.write('\n')   
+        for type, epsilon, sigma in zip(np.unique(self.atoms_type),
+                                        self.epsilon,
+                                        self.sigma):
+            epsilon *= self.reference_energy
+            sigma *= self.reference_distance
+            f.write("pair_coeff "+str(type)+" "+str(type)+" "+
+                    str(epsilon) + " " + str(sigma) + "\n")
+        f.write('\n')
+        f.close()
+
+    def write_lammps_variables(self, filename="variable.lammps"):
+        """Write a LAMMPS-format variable file"""
+        f = open(filename, "w")
+        f.write('# LAMMPS variable file \n\n')
+        f.write('variable thermo equal ' + str(self.thermo) + '\n')
+        f.write('variable dump equal ' + str(self.dump) + '\n')
+        f.write('variable thermo_minimize equal ' + str(self.thermo_minimize) + '\n')
+        f.write('variable dumping_minimize equal ' + str(self.dumping_minimize) + '\n')
+        f.write('variable time_step equal ' + str(self.time_step*self.reference_time) + '\n')
+        f.write('variable minimization_steps equal ' + str(self.minimization_steps) + '\n')
+        f.write('variable maximum_steps equal ' + str(self.maximum_steps) + '\n')
+        f.write('variable temp equal ' + str(self.temperature*self.reference_energy/self.kB) + '\n')
+        f.write('variable tau_temp equal ' + str(self.tau_temp*self.reference_time) + '\n')
+        f.write('\n')
+        f.close()

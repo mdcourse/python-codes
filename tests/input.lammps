@@ -1,0 +1,43 @@
+# LAMMPS input file 
+
+include variable.lammps
+
+# main parameters
+units real
+dimension 3
+atom_style atomic
+pair_style lj/cut 10
+boundary p p p
+
+read_data initial.data
+include PARM.lammps
+
+neigh_modify every 1
+
+thermo ${thermo_minimize}
+dump mydmp all custom ${dumping_minimize} lammps-output/dump.md.lammpstrj id type x y z vx vy vz
+minimize 1.0e-4 1.0e-6 ${minimization_steps} ${minimization_steps}
+min_style cg
+undump mydmp
+reset_timestep 0
+
+velocity all create ${temp} 4928459
+fix mynve all nve
+fix myber all temp/berendsen ${temp} ${temp} ${tau_temp}
+timestep ${time_step}
+
+thermo ${thermo}
+dump mydmp all custom ${dump} lammps-output/dump.md.lammpstrj id type x y z vx vy vz
+
+variable Epot equal pe
+variable Ekin equal ke
+variable Etot equal v_Epot+v_Ekin
+variable pressure equal press
+variable temperature equal temp
+fix myat1 all ave/time ${dump} 1 ${dump} v_Epot file lammps-output/Epot.dat
+fix myat2 all ave/time ${dump} 1 ${dump} v_Ekin file lammps-output/Ekin.dat
+fix myat3 all ave/time ${dump} 1 ${dump} v_Etot file lammps-output/Etot.dat
+fix myat4 all ave/time ${dump} 1 ${dump} v_pressure file lammps-output/pressure.dat
+fix myat5 all ave/time ${dump} 1 ${dump} v_temperature file lammps-output/temperature.dat
+
+run ${maximum_steps}

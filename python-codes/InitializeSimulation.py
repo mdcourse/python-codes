@@ -79,7 +79,7 @@ class InitializeSimulation:
         self.write_lammps_data(filename="initial.data")
 
     def nondimensionalise_units(self, variable, type):
-        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
+        self.kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
         if variable is not None:
             if type == "distance":
                 variable /= self.reference_distance
@@ -88,7 +88,7 @@ class InitializeSimulation:
             elif type == "mass":
                 variable /= self.reference_mass
             elif type == "temperature":
-                variable /= self.reference_energy/kB
+                variable /= self.reference_energy/self.kB
             elif type == "time":
                 variable /= self.reference_time
             elif type == "pressure":
@@ -126,7 +126,7 @@ class InitializeSimulation:
                 box_boundaries[dim] = -L/2, L/2
             else:
                 box_boundaries[dim] = -self.Lx/2, self.Lx/2
-        self.box_boundaries = self.nondimensionalise_units(box_boundaries, "distance")
+        self.box_boundaries = box_boundaries
 
     def initialize_atoms(self):
         """Create initial atom array from input parameters"""

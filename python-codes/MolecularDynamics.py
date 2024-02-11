@@ -36,9 +36,6 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
 
     def run(self):
         self.perform_energy_minimization()
-
-        print("START MD", np.max(self.atoms_positions))
-
         for self.step in range(0, self.maximum_steps+1):
             self.integrate_equation_of_motion()
             self.wrap_in_box()
@@ -47,6 +44,8 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
             self.update_log()
             self.update_dump(filename = "dump.md.lammpstrj")
         self.write_lammps_data(filename = "final.data")
+        self.write_lammps_parameters()
+        self.write_lammps_variables()
 
     def integrate_equation_of_motion(self):
         """Integrate equation of motion using half-step velocity"""
