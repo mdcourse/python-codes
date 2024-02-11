@@ -117,6 +117,34 @@ class Utilities:
                     forces[Nj] -= dU_dr*rij_xyz/rij
         return forces
     
+
+    def evaluate_LJ_force_efficient(self):
+        """Evaluate force based on LJ potential derivative.
+        Uses Verlet lists."""
+        forces = np.zeros((self.total_number_atoms,3))
+        box_size = np.diff(self.box_boundaries).reshape(3)
+        for Ni, neighbor_list in zip(range(self.total_number_atoms-1), self.neighbor_lists):
+            position_i = self.atoms_positions[Ni]
+            sigma_i = self.atoms_sigma[Ni]
+            epsilon_i = self.atoms_epsilon[Ni]
+            for Nj in np.arange(Ni+1,self.total_number_atoms):
+                if Nj in neighbor_list:
+                    position_j = self.atoms_positions[Nj]
+                    rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
+                    rij = np.sqrt(np.sum(rij_xyz**2))
+                    if rij < self.cut_off:
+                        sigma_j = self.atoms_sigma[Nj]
+                        epsilon_j = self.atoms_epsilon[Nj]
+                        sigma_ij = (sigma_i+sigma_j)/2
+                        epsilon_ij = (epsilon_i+epsilon_j)/2
+                        dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
+                        forces[Ni] += dU_dr*rij_xyz/rij
+                        forces[Nj] -= dU_dr*rij_xyz/rij
+                else:
+                        forces[Ni] += 0
+                        forces[Nj] -= 0     
+        return forces
+    
     def evaluate_LJ_matrix(self):
         """Evaluate force based on LJ potential derivative."""
         forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
@@ -146,3 +174,22 @@ class Utilities:
             out_ids = self.atoms_positions[:, dim] < self.box_boundaries[dim][0]
             if np.sum(out_ids) > 0:
                 self.atoms_positions[:, dim][out_ids] += np.diff(self.box_boundaries[dim])[0]
+
+    def update_neighbor_lists(self):
+        if (self.step % self.neighbor == 0):
+            box_size = np.diff(self.box_boundaries).reshape(3)
+            neighbor_lists = []
+            for Ni in range(self.total_number_atoms-1):
+                a_list = []
+                for Nj in np.arange(self.total_number_atoms): # tofix ;: can we use: np.arange(Ni+1,self.total_number_atoms)
+                    if Ni != Nj:
+                        position_i = self.atoms_positions[Ni]
+                        position_j = self.atoms_positions[Nj]
+                        rij_xyz = (np.remainder(position_i - position_j \
+                                                + box_size/2., box_size) \
+                                                - box_size/2.).T
+                        rij = np.sqrt(np.sum(rij_xyz**2))
+                        if rij < self.cut_off: # tofix : a larger cut-off should be used
+                            a_list.append(Nj) 
+                neighbor_lists.append(a_list.copy())
+            self.neighbor_lists = neighbor_lists
