@@ -53,10 +53,10 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
     def integrate_equation_of_motion(self):
         """Integrate equation of motion using half-step velocity"""
         if self.step == 0:
-            self.atoms_accelerations = (self.evaluate_LJ_force_efficient().T/self.atoms_mass).T
+            self.atoms_accelerations = (self.evaluate_LJ_force_with_lists_efficient().T/self.atoms_mass).T
         atoms_velocity_Dt2 = self.atoms_velocities + self.atoms_accelerations*self.time_step/2
         self.atoms_positions = self.atoms_positions + atoms_velocity_Dt2*self.time_step
-        self.atoms_accelerations = (self.evaluate_LJ_force_efficient().T/self.atoms_mass).T
+        self.atoms_accelerations = (self.evaluate_LJ_force_with_lists_efficient().T/self.atoms_mass).T
         self.atoms_velocities = atoms_velocity_Dt2 + self.atoms_accelerations*self.time_step/2
 
     def apply_berendsen_thermostat(self):

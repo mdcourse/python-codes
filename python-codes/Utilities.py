@@ -141,7 +141,7 @@ class Utilities:
                 forces[Nj] -= dU_dr*rij_xyz0/rij0
         return forces
 
-    def evaluate_LJ_force_efficient(self):
+    def evaluate_LJ_force_with_lists(self):
         """Evaluate force based on LJ potential derivative.
         Uses Verlet lists."""
         forces = np.zeros((self.total_number_atoms,3))
@@ -162,12 +162,34 @@ class Utilities:
                         epsilon_ij = (epsilon_i+epsilon_j)/2
                         dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
                         forces[Ni] += dU_dr*rij_xyz/rij
-                        forces[Nj] -= dU_dr*rij_xyz/rij
-                else:
-                        forces[Ni] += 0
-                        forces[Nj] -= 0     
+                        forces[Nj] -= dU_dr*rij_xyz/rij  
         return forces
     
+    def evaluate_LJ_force_with_lists_efficient(self):
+        forces = np.zeros((self.total_number_atoms,3))
+        box_size = np.diff(self.box_boundaries).reshape(3)
+        for Ni, position_i, sigma_i, epsilon_i, neighbor_i in zip(np.arange(self.total_number_atoms-1),
+                                                    self.atoms_positions,
+                                                    self.atoms_sigma,
+                                                    self.atoms_epsilon,
+                                                    self.neighbor_lists):
+            
+            N_j = np.arange(self.total_number_atoms)[neighbor_i]
+            positions_j = self.atoms_positions[neighbor_i]
+            sigma_j = self.atoms_sigma[neighbor_i]
+            epsilon_j = self.atoms_epsilon[neighbor_i]
+            rij_xyz = (np.remainder(position_i - positions_j + box_size/2., box_size) - box_size/2.).T
+            rij = np.linalg.norm(rij_xyz, axis=0)
+            for Nj, sigma_j0, epsilon_j0, rij0, rij_xyz0 in zip(N_j[rij < self.cut_off],
+                                            sigma_j[rij < self.cut_off], epsilon_j[rij < self.cut_off],
+                                            rij[rij < self.cut_off], rij_xyz.T[rij < self.cut_off]):
+                sigma_ij = (sigma_i+sigma_j0)/2
+                epsilon_ij = (epsilon_i+epsilon_j0)/2
+                dU_dr = 48*epsilon_ij/rij0*((sigma_ij/rij0)**12-0.5*(sigma_ij/rij0)**6)
+                forces[Ni] += dU_dr*rij_xyz0/rij0
+                forces[Nj] -= dU_dr*rij_xyz0/rij0
+        return forces
+
     def evaluate_LJ_matrix(self):
         """Evaluate force based on LJ potential derivative."""
         forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
@@ -204,7 +226,7 @@ class Utilities:
             neighbor_lists = []
             for Ni in range(self.total_number_atoms-1):
                 a_list = []
-                for Nj in np.arange(self.total_number_atoms): # tofix ;: can we use: np.arange(Ni+1,self.total_number_atoms)
+                for Nj in np.arange(Ni+1,self.total_number_atoms):
                     if Ni != Nj:
                         position_i = self.atoms_positions[Ni]
                         position_j = self.atoms_positions[Nj]
