@@ -16,6 +16,7 @@ class Utilities:
         """Perform energy minimmization using the steepest descent method"""
         if self.minimization_steps is not None:
             for self.step in range(0, self.minimization_steps+1):
+                self.update_neighbor_lists()
                 Epot = self.calculate_potential_energy(self.atoms_positions)
                 trial_atoms_positions = copy.deepcopy(self.atoms_positions)
                 forces = self.evaluate_LJ_force()
@@ -53,22 +54,20 @@ class Utilities:
         self.calculate_temperature()
         p_ideal = (Ndof/self.dimensions)*self.temperature/volume
         #p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.evaluate_LJ_matrix()*self.evaluate_rij_matrix())
-        p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.evaluate_LJ_force_with_lists_efficient(return_matrix=True)*self.evaluate_rij_matrix())
+        p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.evaluate_LJ_force(return_matrix=True)*self.evaluate_rij_matrix())
         self.pressure = (p_ideal+p_non_ideal)
 
     def evaluate_rij_matrix(self):
         """Evaluate vector rij between particles."""
-        rij = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        box_size = np.diff(self.box_boundaries).reshape(3) # tofix : make an internal variable ? - to be recalcuted only if berendsen
+        rij_matrix = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
         for Ni in range(self.total_number_atoms-1):
             position_i = self.atoms_positions[Ni]
-            for Nj in np.arange(Ni+1,self.total_number_atoms):
-                position_j = self.atoms_positions[Nj]
-                box_size = np.diff(self.box_boundaries).reshape(3)
-                rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
-                r = np.sqrt(np.sum(rij_xyz**2))
-                if r < self.cut_off:
-                    rij[Ni][Nj] = rij_xyz
-        return rij
+            positions_j = self.atoms_positions
+            rij_xyz = (np.remainder(position_i - positions_j + box_size/2., box_size) - box_size/2.)
+            #rij = np.linalg.norm(rij_xyz, axis=0)
+            rij_matrix[Ni] = rij_xyz
+        return rij_matrix
 
     def calculate_r(self, position_i, positions_j, number_atoms = None):
         """Calculate the shortest distance between position_i and positions_j."""
@@ -95,78 +94,8 @@ class Utilities:
             energy_potential += energy_potential_i
         energy_potential /= 2 # To avoid counting potential energy twice
         return energy_potential
-
-    def evaluate_LJ_force(self):
-        """Evaluate force based on LJ potential derivative."""
-        forces = np.zeros((self.total_number_atoms,3))
-        box_size = np.diff(self.box_boundaries).reshape(3)
-        for Ni in range(self.total_number_atoms-1):
-            position_i = self.atoms_positions[Ni]
-            sigma_i = self.atoms_sigma[Ni]
-            epsilon_i = self.atoms_epsilon[Ni]
-            for Nj in np.arange(Ni+1,self.total_number_atoms):
-                position_j = self.atoms_positions[Nj]
-                rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
-                rij = np.sqrt(np.sum(rij_xyz**2))
-                if rij < self.cut_off:
-                    sigma_j = self.atoms_sigma[Nj]
-                    epsilon_j = self.atoms_epsilon[Nj]
-                    sigma_ij = (sigma_i+sigma_j)/2
-                    epsilon_ij = (epsilon_i+epsilon_j)/2
-                    dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
-                    forces[Ni] += dU_dr*rij_xyz/rij
-                    forces[Nj] -= dU_dr*rij_xyz/rij
-        return forces
     
-    def evaluate_LJ_force_faster(self):
-        """Evaluate force based on LJ potential derivative."""
-        forces = np.zeros((self.total_number_atoms,3))
-        box_size = np.diff(self.box_boundaries).reshape(3)
-
-        for Ni, position_i, sigma_i, epsilon_i in zip(np.arange(self.total_number_atoms-1),
-                                                    self.atoms_positions,
-                                                    self.atoms_sigma,
-                                                    self.atoms_epsilon):
-            positions_j = self.atoms_positions[Ni+1:]
-            sigma_j = self.atoms_sigma[Ni+1:]
-            epsilon_j = self.atoms_epsilon[Ni+1:]
-            rij_xyz = (np.remainder(position_i - positions_j + box_size/2., box_size) - box_size/2.).T
-            rij = np.linalg.norm(rij_xyz, axis=0)
-            for Nj, sigma_j0, epsilon_j0, rij0, rij_xyz0 in zip(np.arange(Ni+1,self.total_number_atoms)[rij < self.cut_off],
-                                            sigma_j[rij < self.cut_off], epsilon_j[rij < self.cut_off],
-                                            rij[rij < self.cut_off], rij_xyz.T[rij < self.cut_off]):
-                sigma_ij = (sigma_i+sigma_j0)/2
-                epsilon_ij = (epsilon_i+epsilon_j0)/2
-                dU_dr = 48*epsilon_ij/rij0*((sigma_ij/rij0)**12-0.5*(sigma_ij/rij0)**6)
-                forces[Ni] += dU_dr*rij_xyz0/rij0
-                forces[Nj] -= dU_dr*rij_xyz0/rij0
-        return forces
-
-    def evaluate_LJ_force_with_lists(self):
-        """Evaluate force based on LJ potential derivative.
-        Uses Verlet lists."""
-        forces = np.zeros((self.total_number_atoms,3))
-        box_size = np.diff(self.box_boundaries).reshape(3)
-        for Ni, neighbor_list in zip(range(self.total_number_atoms-1), self.neighbor_lists):
-            position_i = self.atoms_positions[Ni]
-            sigma_i = self.atoms_sigma[Ni]
-            epsilon_i = self.atoms_epsilon[Ni]
-            for Nj in np.arange(Ni+1,self.total_number_atoms):
-                if Nj in neighbor_list:
-                    position_j = self.atoms_positions[Nj]
-                    rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
-                    rij = np.sqrt(np.sum(rij_xyz**2))
-                    if rij < self.cut_off:
-                        sigma_j = self.atoms_sigma[Nj]
-                        epsilon_j = self.atoms_epsilon[Nj]
-                        sigma_ij = (sigma_i+sigma_j)/2
-                        epsilon_ij = (epsilon_i+epsilon_j)/2
-                        dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
-                        forces[Ni] += dU_dr*rij_xyz/rij
-                        forces[Nj] -= dU_dr*rij_xyz/rij  
-        return forces
-    
-    def evaluate_LJ_force_with_lists_efficient(self, return_matrix = False):
+    def evaluate_LJ_force(self, return_matrix = False):
         if return_matrix:
             forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
         else:
@@ -195,27 +124,6 @@ class Utilities:
                 else:
                     forces[Ni] += dU_dr*rij_xyz0/rij0
                     forces[Nj] -= dU_dr*rij_xyz0/rij0
-        return forces
-
-    def evaluate_LJ_matrix(self):
-        """Evaluate force based on LJ potential derivative."""
-        forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
-        box_size = np.diff(self.box_boundaries).reshape(3)
-        for Ni in range(self.total_number_atoms-1):
-            position_i = self.atoms_positions[Ni]
-            sigma_i = self.atoms_sigma[Ni]
-            epsilon_i = self.atoms_epsilon[Ni]
-            for Nj in np.arange(Ni+1,self.total_number_atoms):
-                position_j = self.atoms_positions[Nj]
-                sigma_j = self.atoms_sigma[Nj]
-                epsilon_j = self.atoms_epsilon[Nj]
-                sigma_ij = (sigma_i+sigma_j)/2
-                epsilon_ij = (epsilon_i+epsilon_j)/2
-                rij_xyz = (np.remainder(position_i - position_j + box_size/2., box_size) - box_size/2.).T
-                rij = np.sqrt(np.sum(rij_xyz**2))
-                if rij < self.cut_off:
-                    dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
-                    forces[Ni][Nj] += dU_dr*rij_xyz/rij
         return forces
     
     def wrap_in_box(self):
