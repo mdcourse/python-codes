@@ -52,7 +52,8 @@ class Utilities:
         volume = np.prod(np.diff(self.box_boundaries))
         self.calculate_temperature()
         p_ideal = (Ndof/self.dimensions)*self.temperature/volume
-        p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.evaluate_LJ_matrix()*self.evaluate_rij_matrix())
+        #p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.evaluate_LJ_matrix()*self.evaluate_rij_matrix())
+        p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.evaluate_LJ_force_with_lists_efficient(return_matrix=True)*self.evaluate_rij_matrix())
         self.pressure = (p_ideal+p_non_ideal)
 
     def evaluate_rij_matrix(self):
@@ -165,8 +166,11 @@ class Utilities:
                         forces[Nj] -= dU_dr*rij_xyz/rij  
         return forces
     
-    def evaluate_LJ_force_with_lists_efficient(self):
-        forces = np.zeros((self.total_number_atoms,3))
+    def evaluate_LJ_force_with_lists_efficient(self, return_matrix = False):
+        if return_matrix:
+            forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        else:
+            forces = np.zeros((self.total_number_atoms,3))
         box_size = np.diff(self.box_boundaries).reshape(3)
         for Ni, position_i, sigma_i, epsilon_i, neighbor_i in zip(np.arange(self.total_number_atoms-1),
                                                     self.atoms_positions,
@@ -186,8 +190,11 @@ class Utilities:
                 sigma_ij = (sigma_i+sigma_j0)/2
                 epsilon_ij = (epsilon_i+epsilon_j0)/2
                 dU_dr = 48*epsilon_ij/rij0*((sigma_ij/rij0)**12-0.5*(sigma_ij/rij0)**6)
-                forces[Ni] += dU_dr*rij_xyz0/rij0
-                forces[Nj] -= dU_dr*rij_xyz0/rij0
+                if return_matrix:
+                    forces[Ni][Nj] += dU_dr*rij_xyz0/rij0
+                else:
+                    forces[Ni] += dU_dr*rij_xyz0/rij0
+                    forces[Nj] -= dU_dr*rij_xyz0/rij0
         return forces
 
     def evaluate_LJ_matrix(self):
