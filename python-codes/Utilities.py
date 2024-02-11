@@ -117,6 +117,29 @@ class Utilities:
                     forces[Nj] -= dU_dr*rij_xyz/rij
         return forces
     
+    def evaluate_LJ_force_faster(self):
+        """Evaluate force based on LJ potential derivative."""
+        forces = np.zeros((self.total_number_atoms,3))
+        box_size = np.diff(self.box_boundaries).reshape(3)
+
+        for Ni, position_i, sigma_i, epsilon_i in zip(np.arange(self.total_number_atoms-1),
+                                                    self.atoms_positions,
+                                                    self.atoms_sigma,
+                                                    self.atoms_epsilon):
+            positions_j = self.atoms_positions[Ni+1:]
+            sigma_j = self.atoms_sigma[Ni+1:]
+            epsilon_j = self.atoms_epsilon[Ni+1:]
+            rij_xyz = (np.remainder(position_i - positions_j + box_size/2., box_size) - box_size/2.).T
+            rij = np.linalg.norm(rij_xyz, axis=0)
+            for Nj, sigma_j0, epsilon_j0, rij0, rij_xyz0 in zip(np.arange(Ni+1,self.total_number_atoms)[rij < self.cut_off],
+                                            sigma_j[rij < self.cut_off], epsilon_j[rij < self.cut_off],
+                                            rij[rij < self.cut_off], rij_xyz.T[rij < self.cut_off]):
+                sigma_ij = (sigma_i+sigma_j0)/2
+                epsilon_ij = (epsilon_i+epsilon_j0)/2
+                dU_dr = 48*epsilon_ij/rij0*((sigma_ij/rij0)**12-0.5*(sigma_ij/rij0)**6)
+                forces[Ni] += dU_dr*rij_xyz0/rij0
+                forces[Nj] -= dU_dr*rij_xyz0/rij0
+        return forces
 
     def evaluate_LJ_force_efficient(self):
         """Evaluate force based on LJ potential derivative.
