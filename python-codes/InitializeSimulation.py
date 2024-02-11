@@ -71,13 +71,11 @@ class InitializeSimulation:
         epsilon_J = self.epsilon[0]*cst.calorie*cst.kilo/cst.Avogadro # J
         sigma_m = self.sigma[0]*cst.angstrom # m
         time_s = np.sqrt(mass_kg*sigma_m**2/epsilon_J) # s
-        time_fs = time_s / cst.femto # fs
-        self.reference_time = time_fs # fs
+        self.reference_time = time_s / cst.femto # fs
         kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
-        self.reference_temperature = kB/self.epsilon[0] # K
+        self.reference_temperature = self.epsilon[0]/kB # K
         pressure_pa = epsilon_J/sigma_m**3 # Pa
-        pressure_atm = pressure_pa/cst.atm # atm
-        self.reference_pressure = pressure_atm
+        self.reference_pressure = pressure_pa/cst.atm # atm
 
     def nondimensionalize_units(self):
         """Use LJ prefactors to convert units into non-dimensional."""
@@ -149,7 +147,7 @@ class InitializeSimulation:
         
     def populate_box(self):
         """Place atoms at random positions within the box."""
-        if self.provided_positions is not None: # tofix : do we really want provided positions ?
+        if self.provided_positions is not None:
             atoms_positions = self.provided_positions/self.reference_distance
         else:
             atoms_positions = np.zeros((self.total_number_atoms, self.dimensions))

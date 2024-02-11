@@ -33,8 +33,10 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
 
         self.cut_off /= self.reference_distance
         self.time_step /= self.reference_time
-        self.tau_temp /= self.reference_time
-        self.tau_press /= self.reference_time
+        if self.tau_temp is not None:
+            self.tau_temp /= self.reference_time
+        if self.tau_press is not None:
+            self.tau_press /= self.reference_time
 
     def run(self):
         self.perform_energy_minimization()

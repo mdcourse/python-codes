@@ -21,69 +21,50 @@ class Outputs:
         self.dump = dump
         self.data_folder = data_folder
         super().__init__(*args, **kwargs)
-
-    def evaluate_temperature(self):
-        """Measure temperature and convert in Kelvin."""
-        self.calculate_temperature()
-        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
-        return np.round(self.temperature*self.reference_energy/kB,2)
-
-    def evaluate_pressure(self):
-        """Measure pressure and convert in atmosphere."""
-        self.calculate_pressure()
-        return np.round(self.pressure*self.reference_energy/self.reference_distance**3*cst.calorie*cst.kilo/cst.Avogadro/cst.angstrom**3/cst.atm, 2)
     
-    def evaluate_volume(self):
-        """Measure volume and convert in Angstrom 3"""
-        return np.round(np.prod(np.diff(self.box_boundaries))*self.reference_distance**3)
-
-    def evaluate_potential_energy(self):
-        """Measure energy and convert in kcal/mol"""
-        Epot = self.calculate_potential_energy(self.atoms_positions)
-        return Epot*self.reference_energy
-    
-    def evaluate_kinetic_energy(self):
-        """Measure energy and convert in kcal/mol"""
-        self.calculate_kinetic_energy()
-        return self.Ekin*self.reference_energy
-    
-    def evaluate_density(self):
-        return self.number_atoms/np.round(np.prod(np.diff(self.box_boundaries))*self.reference_distance**3)
 
     def update_log(self, minimization = False):
         if minimization:
             if self.thermo_minimize is not None:
                 if (self.step % self.thermo_minimize == 0) | (self.step == 0):
-                    epot = self.evaluate_potential_energy()
+                    epot_kcalmol = self.calculate_potential_energy(self.atoms_positions) \
+                        * self.reference_energy
+                    max_force_kcalmolA = self.max_forces * self.reference_energy / self.reference_distance
                     if self.step == 0:
                         print("%s %s %s"%("step", "epot", "maxF")) 
-                    print("%d %.3f %.3f"%(self.step, epot, self.max_forces)) 
+                    print("%d %.3f %.3f"%(self.step, epot_kcalmol, max_force_kcalmolA)) 
         else:
             if self.thermo is not None:
                 if (self.step % self.thermo == 0) | (self.step == 0):
-                    temperature = self.evaluate_temperature()
-                    pressure = self.evaluate_pressure()
-                    volume = self.evaluate_volume()
-                    epot = self.evaluate_potential_energy()
-                    ekin = self.evaluate_kinetic_energy()
-                    density = self.evaluate_density()
+                    # refresh values
+                    self.calculate_temperature()
+                    self.calculate_pressure()
+                    self.calculate_kinetic_energy()
+                    # convert the units
+                    temperature_K = self.temperature * self.reference_temperature
+                    pressure_atm = self.pressure * self.reference_pressure
+                    volume_A3 = np.prod(self.box_size)*self.reference_distance**3
+                    epot_kcalmol = self.calculate_potential_energy(self.atoms_positions) \
+                        * self.reference_energy
+                    ekin_kcalmol = self.Ekin*self.reference_energy
+                    density_gmolA3 = self.evaluate_density() * self.reference_mass/self.reference_distance**3
                     if self.step == 0:
                         row = ["step", "N", "temp", "epot", "ekin", "press", "vol"]
                         print("{:>5} {:>5} {:>5} {:>5} {:>5} {:>5} {:>5}".format(*row))
                     row = [self.step,
                         self.total_number_atoms,
-                        temperature,
-                        epot,
-                        ekin,
-                        pressure,
-                        volume]
+                        temperature_K,
+                        epot_kcalmol,
+                        ekin_kcalmol,
+                        pressure_atm,
+                        volume_A3]
                     print("{:>5} {:>5} {:>5} {:>5} {:>5} {:>5} {:>5}".format(*row))
-                    self.write_data_file(temperature, "temperature.dat")
-                    self.write_data_file(pressure, "pressure.dat")
-                    self.write_data_file(volume, "volume.dat")
-                    self.write_data_file(epot, "Epot.dat")
-                    self.write_data_file(ekin, "Ekin.dat")
-                    self.write_data_file(density, "density.dat")
+                    self.write_data_file(temperature_K, "temperature.dat")
+                    self.write_data_file(pressure_atm, "pressure.dat")
+                    self.write_data_file(volume_A3, "volume.dat")
+                    self.write_data_file(epot_kcalmol, "Epot.dat")
+                    self.write_data_file(ekin_kcalmol, "Ekin.dat")
+                    self.write_data_file(density_gmolA3, "density.dat")
 
     def write_data_file(self, output_value, filename):
         if self.step == 0:
@@ -185,7 +166,8 @@ class Outputs:
         f.write('variable time_step equal ' + str(self.time_step*self.reference_time) + '\n')
         f.write('variable minimization_steps equal ' + str(self.minimization_steps) + '\n')
         f.write('variable maximum_steps equal ' + str(self.maximum_steps) + '\n')
-        f.write('variable temp equal ' + str(self.temperature*self.reference_energy/self.kB) + '\n')
+        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
+        f.write('variable temp equal ' + str(self.temperature*self.reference_energy/kB) + '\n')
         f.write('variable tau_temp equal ' + str(self.tau_temp*self.reference_time) + '\n')
         f.write('\n')
         f.close()

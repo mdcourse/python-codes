@@ -27,8 +27,10 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         super().__init__(*args, **kwargs)
 
         self.cut_off /= self.reference_distance
-        self.displace_mc /= self.reference_distance
-        self.mu /= self.reference_energy
+        if self.displace_mc is not None:
+            self.displace_mc /= self.reference_distance
+        if self.mu is not None:
+            self.mu /= self.reference_energy
 
     def run(self):
         """Perform the loop over time."""
