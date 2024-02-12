@@ -19,8 +19,8 @@ class InitializeSimulation:
                  seed=None,
                  desired_temperature=300,
                  desired_pressure=1,
-                 provided_positions=None,
-                 provided_velocities=None,
+                 provided_positions=None, # tofix - separate in an "import" method that can read .data file?
+                 provided_velocities=None, # tofix - separate in an "import" method that can read .data file?
                  *args,
                  **kwargs,
                  ):
@@ -39,25 +39,40 @@ class InitializeSimulation:
         self.desired_pressure = desired_pressure
         self.provided_positions = provided_positions
         self.provided_velocities = provided_velocities
-
         if self.seed is not None:
             np.random.seed(self.seed)
-
         self.assert_correctness_parameters()
-        self.calculate_LJ_prefactors()
+        
         self.nondimensionalize_units()
-        self.initialize_box()
-        self.initialize_atoms()
+        self.define_box()
+        self.identify_atom_properties()
         self.populate_box()
         self.set_initial_velocity()
         self.write_lammps_data(filename="initial.data")
 
-    def calculate_LJ_prefactors(self):
+    def nondimensionalize_units(self):
+        """Use LJ prefactors to convert units into non-dimensional."""
+        self.calculate_LJunits_prefactors()
+        self.Lx /= self.reference_distance
+        self.Ly /= self.reference_distance
+        self.Lz /= self.reference_distance
+        epsilon, sigma, atom_mass = [], [], []
+        for e0, s0, m0 in zip(self.epsilon, self.sigma, self.atom_mass):
+            epsilon.append(e0/self.reference_energy)
+            sigma.append(s0/self.reference_distance)
+            atom_mass.append(m0/self.reference_mass)
+        self.epsilon = epsilon
+        self.sigma = np.array(sigma)
+        self.atom_mass = np.array(atom_mass)
+        self.desired_temperature /= self.reference_temperature
+        self.desired_pressure /= self.reference_pressure
+
+    def calculate_LJunits_prefactors(self):
         """Calculate LJ non-dimensional units.
         
         Distances, energies, and masses are normalized by
         the $\sigma$, $\epsilon$, and $m$ parameters from the
-        first atom.
+        first type of atom.
         In addition:
         - Times are normalized by $\sqrt{m \sigma^2 / \epsilon}$.
         - Temperature are normalized by $\epsilon/k_\text{B}$, 
@@ -76,22 +91,6 @@ class InitializeSimulation:
         self.reference_temperature = self.epsilon[0]/kB # K
         pressure_pa = epsilon_J/sigma_m**3 # Pa
         self.reference_pressure = pressure_pa/cst.atm # atm
-
-    def nondimensionalize_units(self):
-        """Use LJ prefactors to convert units into non-dimensional."""
-        self.Lx /= self.reference_distance
-        self.Ly /= self.reference_distance
-        self.Lz /= self.reference_distance
-        epsilon, sigma, atom_mass = [], [], []
-        for e0, s0, m0 in zip(self.epsilon, self.sigma, self.atom_mass):
-            epsilon.append(e0/self.reference_energy)
-            sigma.append(s0/self.reference_distance)
-            atom_mass.append(m0/self.reference_mass)
-        self.epsilon = epsilon
-        self.sigma = np.array(sigma)
-        self.atom_mass = np.array(atom_mass)
-        self.desired_temperature /= self.reference_temperature
-        self.desired_pressure /= self.reference_pressure
 
     def assert_correctness_parameters(self):
         """Assert that the parameters entered are correct"""
@@ -112,7 +111,7 @@ class InitializeSimulation:
             self.atom_mass = [self.atom_mass]
             self.sigma = [self.sigma]
 
-    def initialize_box(self):
+    def define_box(self):
         """Define box boundaries based on Lx, Ly, and Lz.
         If Ly or Lz or both are None, then Lx is used
         along the y and z instead"""
@@ -126,7 +125,7 @@ class InitializeSimulation:
         self.box_boundaries = box_boundaries
         self.box_size = np.diff(box_boundaries).reshape(3)
 
-    def initialize_atoms(self):
+    def identify_atom_properties(self):
         """Create initial atom array from input parameters"""
         self.total_number_atoms = np.sum(self.number_atoms)
         atoms_sigma = []
