@@ -1,7 +1,7 @@
 from scipy import constants as cst
 from decimal import Decimal
 import numpy as np
-import copy
+import copy, sys
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -48,23 +48,82 @@ class Outputs:
                         * self.reference_energy
                     ekin_kcalmol = self.Ekin*self.reference_energy
                     density_gmolA3 = self.evaluate_density() * self.reference_mass/self.reference_distance**3
+                    
+
                     if self.step == 0:
-                        row = ["step", "N", "temp", "epot", "ekin", "press", "vol"]
-                        print("{:>5} {:>5} {:>5} {:>5} {:>5} {:>5} {:>5}".format(*row))
-                    row = [self.step,
-                        self.total_number_atoms,
-                        temperature_K,
-                        epot_kcalmol,
-                        ekin_kcalmol,
-                        pressure_atm,
-                        volume_A3]
-                    print("{:>5} {:>5} {:>5} {:>5} {:>5} {:>5} {:>5}".format(*row))
-                    self.write_data_file(temperature_K, "temperature.dat")
-                    self.write_data_file(pressure_atm, "pressure.dat")
-                    self.write_data_file(volume_A3, "volume.dat")
-                    self.write_data_file(epot_kcalmol, "Epot.dat")
-                    self.write_data_file(ekin_kcalmol, "Ekin.dat")
-                    self.write_data_file(density_gmolA3, "density.dat")
+                        header = '{:<5} {:<9} {:<9} {:<13} {:<13}'.format(
+                            '%s' % ("step"),
+                            '%s' % ("T (K)"),
+                            '%s' % ("p (atm)"),
+                            '%s' % ("Ep (kcal/mol)"),
+                            '%s' % ("Ek (kcal/mol)"))
+                        if self.tau_press is not None:
+                            header += "{:<6}".format('%s' % ("V (A3)"))
+                            header += "{:<6}".format('%s' % ("dens (g/mol/A3)"))
+                        try:
+                            if self.mu is not None:
+                                header += "{:<6}".format('%s' % ("N"))
+                        except:
+                            pass # self.mu not defined
+                        " print(header)
+
+                    if self.tau_press is not None:
+                        if self.step == 0:         
+                            print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
+                                '%s' % ("step"),
+                                '%s' % ("N"),
+                                '%s' % ("T (K)"),
+                                '%s' % ("p (atm)"),
+                                '%s' % ("V (A3)"),
+                                '%s' % ("Ep (kcal/mol)"),
+                                '%s' % ("Ek (kcal/mol)"),      
+                                '%s' % ("dens (g/mol/A3)"),                        
+                                ))
+                        print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
+                            '%s' % (self.step),
+                            '%s' % (self.total_number_atoms),
+                            '%s' % (f"{temperature_K:.3}"),
+                            '%s' % (f"{pressure_atm:.3}"),
+                            '%s' % (f"{volume_A3:.3}"),
+                            '%s' % (f"{epot_kcalmol:.3}"),
+                            '%s' % (f"{ekin_kcalmol:.3}"),      
+                            '%s' % (f"{density_gmolA3:.3}"),                        
+                            ))
+                    else:
+                        if self.tau_press is not None:
+                            if self.step == 0:         
+                                print('{:<5} {:<5} {:<9} {:<9} {:<13} {:<13}'.format(
+                                    '%s' % ("step"),
+                                    '%s' % ("N"),
+                                    '%s' % ("T (K)"),
+                                    '%s' % ("p (atm)"),
+                                    '%s' % ("Ep (kcal/mol)"),
+                                    '%s' % ("Ek (kcal/mol)"),      
+                                    ))
+                            print('{:<5} {:<5} {:<9} {:<9} {:<13} {:<13}'.format(
+                                '%s' % (self.step),
+                                '%s' % (self.total_number_atoms),
+                                '%s' % (f"{temperature_K:.3}"),
+                                '%s' % (f"{pressure_atm:.3}"),
+                                '%s' % (f"{epot_kcalmol:.3}"),
+                                '%s' % (f"{ekin_kcalmol:.3}"),      
+                                ))
+                        else:
+                            if self.step == 0:         
+                                print('{:<5} {:<9} {:<9} {:<13} {:<13}'.format(
+                                    '%s' % ("step"),
+                                    '%s' % ("T (K)"),
+                                    '%s' % ("p (atm)"),
+                                    '%s' % ("Ep (kcal/mol)"),
+                                    '%s' % ("Ek (kcal/mol)"),      
+                                    ))
+                            print('{:<5} {:<9} {:<9} {:<13} {:<13}'.format(
+                                '%s' % (self.step),
+                                '%s' % (f"{temperature_K:.3}"),
+                                '%s' % (f"{pressure_atm:.3}"),
+                                '%s' % (f"{epot_kcalmol:.3}"),
+                                '%s' % (f"{ekin_kcalmol:.3}"),      
+                                ))
 
     def write_data_file(self, output_value, filename):
         if self.step == 0:
