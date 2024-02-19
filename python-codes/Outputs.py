@@ -48,7 +48,6 @@ class Outputs:
                         * self.reference_energy
                     ekin_kcalmol = self.Ekin*self.reference_energy
                     density_gmolA3 = self.evaluate_density() * self.reference_mass/self.reference_distance**3
-                    
 
                     if self.step == 0:
                         header = '{:<5} {:<9} {:<9} {:<13} {:<13}'.format(
@@ -65,7 +64,7 @@ class Outputs:
                                 header += "{:<6}".format('%s' % ("N"))
                         except:
                             pass # self.mu not defined
-                        " print(header)
+                        # print(header)
 
                     if self.tau_press is not None:
                         if self.step == 0:         
