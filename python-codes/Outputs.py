@@ -79,13 +79,15 @@ class Outputs:
                                                        ekin_kcalmol,
                                                        pressure_atm,
                                                        temperature_K,
-                                                       density_gcm3],
+                                                       density_gcm3,
+                                                       volume_A3],
                                                       ["atom_number.dat",
                                                        "Epot.dat",
                                                        "Ekin.dat",
                                                        "pressure.dat",
                                                        "temperature.dat",
-                                                       "density.dat"]):
+                                                       "density.dat",
+                                                       "volume.dat"]):
                         self.write_data_file(output_value, filename)
 
     def write_data_file(self, output_value, filename):
@@ -190,7 +192,13 @@ class Outputs:
         f.write('variable minimization_steps equal ' + str(self.minimization_steps) + '\n')
         f.write('variable maximum_steps equal ' + str(self.maximum_steps) + '\n')
         kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
-        f.write('variable temp equal ' + str(self.temperature*self.reference_energy/kB) + '\n')
+        f.write('variable temp equal ' + str(self.desired_temperature*self.reference_energy/kB) + '\n')
         f.write('variable tau_temp equal ' + str(self.tau_temp*self.reference_time) + '\n')
+        if self.tau_press is not None:
+            f.write('variable press equal ' + str(self.desired_pressure * self.reference_pressure) + '\n')
+            f.write('variable tau_press equal ' + str(self.tau_press*self.reference_time) + '\n')
+            f.write('variable pber equal 1')
+        else:
+            f.write('variable pber equal 0')     
         f.write('\n')
         f.close()

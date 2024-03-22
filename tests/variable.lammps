@@ -7,6 +7,9 @@ variable dumping_minimize equal 10
 variable time_step equal 1.0
 variable minimization_steps equal 50
 variable maximum_steps equal 5000
-variable temp equal 99.94661456155652
+variable temp equal 100.0
 variable tau_temp equal 100.0
-
+variable module equal 253.95712209722564
+variable press equal 0.9999999999999999
+variable tau_press equal 999.9999999999999
+variable pber equal 1
