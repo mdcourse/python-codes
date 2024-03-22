@@ -10,8 +10,8 @@ class Outputs:
     def __init__(self,
                  thermo = None,
                  dump = None,
-                 thermo_minimize = 5,
-                 dumping_minimize = 5,
+                 thermo_minimize = 25,
+                 dumping_minimize = 10,
                  data_folder = "./",
                  *args,
                  **kwargs):
@@ -50,6 +50,7 @@ class Outputs:
                         * self.reference_energy
                     ekin_kcalmol = self.Ekin*self.reference_energy
                     density_gmolA3 = self.evaluate_density() * self.reference_mass/self.reference_distance**3
+                    density_gcm3 = density_gmolA3/6.022e23*(1e8)**3
 
                     if self.step == 0:         
                         print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
@@ -60,7 +61,7 @@ class Outputs:
                             '%s' % ("V (A3)"),
                             '%s' % ("Ep (kcal/mol)"),
                             '%s' % ("Ek (kcal/mol)"),      
-                            '%s' % ("dens (g/mol/A3)"),                        
+                            '%s' % ("dens (g/cm3)"),                        
                             ))
                     print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
                         '%s' % (self.step),
@@ -70,8 +71,22 @@ class Outputs:
                         '%s' % (f"{volume_A3:.3}"),
                         '%s' % (f"{epot_kcalmol:.3}"),
                         '%s' % (f"{ekin_kcalmol:.3}"),      
-                        '%s' % (f"{density_gmolA3:.3}"),                        
+                        '%s' % (f"{density_gcm3:.3}"),                        
                         ))
+
+                    for output_value, filename in zip([self.total_number_atoms,
+                                                       epot_kcalmol,
+                                                       ekin_kcalmol,
+                                                       pressure_atm,
+                                                       temperature_K,
+                                                       density_gcm3],
+                                                      ["atom_number.dat",
+                                                       "Epot.dat",
+                                                       "Ekin.dat",
+                                                       "pressure.dat",
+                                                       "temperature.dat",
+                                                       "density.dat"]):
+                        self.write_data_file(output_value, filename)
 
     def write_data_file(self, output_value, filename):
         if self.step == 0:

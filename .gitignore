@@ -9,3 +9,6 @@ python-codes/*.data
 **/log.*
 
 benchmark/*/*.data
+
+./tests/*.data
+./tests/variable.lammps
