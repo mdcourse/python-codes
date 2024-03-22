@@ -74,5 +74,6 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
             self.calculate_pressure()
             scale = np.sqrt(1+self.time_step*((self.pressure/self.desired_pressure)-1)/self.tau_press)
             self.box_boundaries *= scale
+            self.box_size = np.diff(self.box_boundaries).reshape(3)
             self.atoms_positions *= scale
-
+            
