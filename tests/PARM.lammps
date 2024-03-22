@@ -1,8 +1,6 @@
 # LAMMPS parameter file 
 
 mass 1 1.0
-mass 2 1.0
 
-pair_coeff 1 1 0.1 2.0
-pair_coeff 2 2 0.1 1.0
+pair_coeff 1 1 0.1 3.0
 

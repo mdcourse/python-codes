@@ -1,12 +1,12 @@
 # LAMMPS variable file 
 
-variable thermo equal 10
-variable dump equal 10
+variable thermo equal 250
+variable dump equal 250
 variable thermo_minimize equal 5
 variable dumping_minimize equal 5
 variable time_step equal 1.0
 variable minimization_steps equal 50
-variable maximum_steps equal 500
-variable temp equal 3337.727805252051
+variable maximum_steps equal 1000
+variable temp equal 99.9248374583176
 variable tau_temp equal 100.0
 

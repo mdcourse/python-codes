@@ -51,80 +51,27 @@ class Outputs:
                     ekin_kcalmol = self.Ekin*self.reference_energy
                     density_gmolA3 = self.evaluate_density() * self.reference_mass/self.reference_distance**3
 
-                    if self.step == 0:
-                        header = '{:<5} {:<9} {:<9} {:<13} {:<13}'.format(
+                    if self.step == 0:         
+                        print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
                             '%s' % ("step"),
+                            '%s' % ("N"),
                             '%s' % ("T (K)"),
                             '%s' % ("p (atm)"),
+                            '%s' % ("V (A3)"),
                             '%s' % ("Ep (kcal/mol)"),
-                            '%s' % ("Ek (kcal/mol)"))
-                        if self.tau_press is not None:
-                            header += "{:<6}".format('%s' % ("V (A3)"))
-                            header += "{:<6}".format('%s' % ("dens (g/mol/A3)"))
-                        try:
-                            if self.mu is not None:
-                                header += "{:<6}".format('%s' % ("N"))
-                        except:
-                            pass # self.mu not defined
-                        # print(header)
-
-                    if self.tau_press is not None:
-                        if self.step == 0:         
-                            print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
-                                '%s' % ("step"),
-                                '%s' % ("N"),
-                                '%s' % ("T (K)"),
-                                '%s' % ("p (atm)"),
-                                '%s' % ("V (A3)"),
-                                '%s' % ("Ep (kcal/mol)"),
-                                '%s' % ("Ek (kcal/mol)"),      
-                                '%s' % ("dens (g/mol/A3)"),                        
-                                ))
-                        print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
-                            '%s' % (self.step),
-                            '%s' % (self.total_number_atoms),
-                            '%s' % (f"{temperature_K:.3}"),
-                            '%s' % (f"{pressure_atm:.3}"),
-                            '%s' % (f"{volume_A3:.3}"),
-                            '%s' % (f"{epot_kcalmol:.3}"),
-                            '%s' % (f"{ekin_kcalmol:.3}"),      
-                            '%s' % (f"{density_gmolA3:.3}"),                        
+                            '%s' % ("Ek (kcal/mol)"),      
+                            '%s' % ("dens (g/mol/A3)"),                        
                             ))
-                    else:
-                        if self.tau_press is not None:
-                            if self.step == 0:         
-                                print('{:<5} {:<5} {:<9} {:<9} {:<13} {:<13}'.format(
-                                    '%s' % ("step"),
-                                    '%s' % ("N"),
-                                    '%s' % ("T (K)"),
-                                    '%s' % ("p (atm)"),
-                                    '%s' % ("Ep (kcal/mol)"),
-                                    '%s' % ("Ek (kcal/mol)"),      
-                                    ))
-                            print('{:<5} {:<5} {:<9} {:<9} {:<13} {:<13}'.format(
-                                '%s' % (self.step),
-                                '%s' % (self.total_number_atoms),
-                                '%s' % (f"{temperature_K:.3}"),
-                                '%s' % (f"{pressure_atm:.3}"),
-                                '%s' % (f"{epot_kcalmol:.3}"),
-                                '%s' % (f"{ekin_kcalmol:.3}"),      
-                                ))
-                        else:
-                            if self.step == 0:         
-                                print('{:<5} {:<9} {:<9} {:<13} {:<13}'.format(
-                                    '%s' % ("step"),
-                                    '%s' % ("T (K)"),
-                                    '%s' % ("p (atm)"),
-                                    '%s' % ("Ep (kcal/mol)"),
-                                    '%s' % ("Ek (kcal/mol)"),      
-                                    ))
-                            print('{:<5} {:<9} {:<9} {:<13} {:<13}'.format(
-                                '%s' % (self.step),
-                                '%s' % (f"{temperature_K:.3}"),
-                                '%s' % (f"{pressure_atm:.3}"),
-                                '%s' % (f"{epot_kcalmol:.3}"),
-                                '%s' % (f"{ekin_kcalmol:.3}"),      
-                                ))
+                    print('{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'.format(
+                        '%s' % (self.step),
+                        '%s' % (self.total_number_atoms),
+                        '%s' % (f"{temperature_K:.3}"),
+                        '%s' % (f"{pressure_atm:.3}"),
+                        '%s' % (f"{volume_A3:.3}"),
+                        '%s' % (f"{epot_kcalmol:.3}"),
+                        '%s' % (f"{ekin_kcalmol:.3}"),      
+                        '%s' % (f"{density_gmolA3:.3}"),                        
+                        ))
 
     def write_data_file(self, output_value, filename):
         if self.step == 0:

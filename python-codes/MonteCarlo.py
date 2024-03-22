@@ -13,7 +13,7 @@ from Outputs import Outputs
 class MonteCarlo(InitializeSimulation, Utilities, Outputs):
     def __init__(self,
         maximum_steps,
-        cut_off = 10,
+        cut_off = 25,
         displace_mc=None,
         mu = None,
         *args,
