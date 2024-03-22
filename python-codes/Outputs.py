@@ -1,7 +1,7 @@
 from scipy import constants as cst
 from decimal import Decimal
 import numpy as np
-import copy, sys
+import copy, sys, os
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -21,7 +21,9 @@ class Outputs:
         self.dump = dump
         self.data_folder = data_folder
         super().__init__(*args, **kwargs)
-    
+
+        if os.path.exists(self.data_folder) is False:
+            os.mkdir(self.data_folder)
 
     def update_log(self, minimization = False):
         if minimization:
