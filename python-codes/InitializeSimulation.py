@@ -16,7 +16,7 @@ class InitializeSimulation:
                  epsilon=0.1,
                  sigma=1,
                  atom_mass=1,
-                 atom_charge=0,
+                 atom_charge=0, # only zero charged are allowed right now
                  seed=None,
                  desired_temperature=300,
                  desired_pressure=1,
