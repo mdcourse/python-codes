@@ -20,8 +20,6 @@ class InitializeSimulation:
                  seed=None,
                  desired_temperature=300,
                  desired_pressure=1,
-                 provided_positions=None, # tofix - separate in an "import" method that can read .data file?
-                 provided_velocities=None, # tofix - separate in an "import" method that can read .data file?
                  *args,
                  **kwargs,
                  ):
@@ -39,12 +37,11 @@ class InitializeSimulation:
         self.seed = seed
         self.desired_temperature = desired_temperature
         self.desired_pressure = desired_pressure
-        self.provided_positions = provided_positions
-        self.provided_velocities = provided_velocities
         if self.seed is not None:
             np.random.seed(self.seed)
         self.assert_correctness_parameters()
         
+        self.calculate_LJunits_prefactors()
         self.nondimensionalize_units()
         self.define_box()
         self.identify_atom_properties()
@@ -54,7 +51,6 @@ class InitializeSimulation:
 
     def nondimensionalize_units(self):
         """Use LJ prefactors to convert units into non-dimensional."""
-        self.calculate_LJunits_prefactors()
         self.Lx /= self.reference_distance
         if self.Ly is not None:
             self.Ly /= self.reference_distance
