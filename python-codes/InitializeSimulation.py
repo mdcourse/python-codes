@@ -66,8 +66,8 @@ class InitializeSimulation:
             sigma.append(s0/self.reference_distance)
             atom_mass.append(m0/self.reference_mass)
         self.epsilon = epsilon
-        self.sigma = np.array(sigma)
-        self.atom_mass = np.array(atom_mass)
+        self.sigma = sigma
+        self.atom_mass = atom_mass
         self.desired_temperature /= self.reference_temperature
         self.desired_pressure /= self.reference_pressure
 

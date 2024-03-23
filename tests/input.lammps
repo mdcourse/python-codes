@@ -13,7 +13,7 @@ boundary p p p
 read_data initial.data
 include PARM.lammps
 
-neigh_modify every 1
+neigh_modify every 5
 
 thermo ${thermo_minimize}
 dump mydmp all custom ${dumping_minimize} lammps-output/dump.md.lammpstrj id type x y z vx vy vz
