@@ -149,8 +149,9 @@ class Outputs:
         f.write('Atoms\n')
         f.write('\n')
         cpt = 1
-        for type, q, xyz in zip(self.atoms_type, self.atoms_charge,
+        for type, xyz in zip(self.atoms_type,
                              self.atoms_positions*self.reference_distance):
+            q = 0
             f.write("%d %d %d %.3f %.3f %.3f %.3f %s"%(cpt, 1, type, q, xyz[0], xyz[1], xyz[2], '\n')) 
             cpt += 1
         f.write('\n')
