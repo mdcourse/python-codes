@@ -56,8 +56,10 @@ class InitializeSimulation:
         """Use LJ prefactors to convert units into non-dimensional."""
         self.calculate_LJunits_prefactors()
         self.Lx /= self.reference_distance
-        self.Ly /= self.reference_distance
-        self.Lz /= self.reference_distance
+        if self.Ly is not None:
+            self.Ly /= self.reference_distance
+        if self.Lz is not None:
+            self.Lz /= self.reference_distance
         epsilon, sigma, atom_mass = [], [], []
         for e0, s0, m0 in zip(self.epsilon, self.sigma, self.atom_mass):
             epsilon.append(e0/self.reference_energy)
