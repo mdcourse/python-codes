@@ -33,7 +33,7 @@ class InitializeSimulation:
         self.define_box()
         self.identify_atom_properties()
         self.populate_box()
-        
+
     def nondimensionalize_units(self):
         """Use LJ prefactors to convert units into non-dimensional."""
         self.Lx /= self.reference_distance
@@ -100,10 +100,7 @@ class InitializeSimulation:
 
     def populate_box(self):
         """Place atoms at random positions within the box."""
-        if self.provided_positions is not None:
-            atoms_positions = self.provided_positions/self.reference_distance
-        else:
-            atoms_positions = np.zeros((self.total_number_atoms, self.dimensions))
-            for dim in np.arange(self.dimensions):
-                atoms_positions[:, dim] = np.random.random(self.total_number_atoms)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2    
+        atoms_positions = np.zeros((self.total_number_atoms, self.dimensions))
+        for dim in np.arange(self.dimensions):
+            atoms_positions[:, dim] = np.random.random(self.total_number_atoms)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2    
         self.atoms_positions = atoms_positions
