@@ -12,20 +12,24 @@ from Outputs import Outputs
 
 class MonteCarlo(InitializeSimulation, Utilities, Outputs):
     def __init__(self,
-                 maximum_steps,
-                 displace_mc=None,
-                 *args,
-                 **kwargs,
-                 ):
-                 super().__init__(*args, **kwargs)
+        maximum_steps,
+        displace_mc=None,
+        *args,
+        **kwargs,
+        ):
+        super().__init__(*args, **kwargs)
 
-                 self.maximum_steps = maximum_steps
-                 self.displace_mc = displace_mc
+        self.maximum_steps = maximum_steps
+        self.displace_mc = displace_mc
+
+        if self.displace_mc is not None:
+            self.displace_mc /= self.reference_distance
 
     def run(self):
         for self.step in range(0, self.maximum_steps+1):
             self.monte_carlo_displacement()
             self.wrap_in_box()
+            self.update_dump(filename="dump.mc.lammpstrj", velocity=False)
 
     def monte_carlo_displacement(self):
         if self.displace_mc is not None:

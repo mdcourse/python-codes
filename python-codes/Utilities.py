@@ -74,8 +74,10 @@ class Utilities:
             rij_matrix[Ni] = rij_xyz
         return rij_matrix
 
-    def calculate_min_r(self, position_i, positions_j):
-        """Calculate the shortest distance between position_i and positions_j."""
+    def calculate_r(self, position_i, positions_j):
+        """Calculate the shortest distance between position_i and positions_j.
+        # to fix : use the MDAnalysis option
+        """
         rij = (np.remainder(position_i - positions_j
                             + self.box_size/2., self.box_size) - self.box_size/2.)
         return np.linalg.norm(rij, axis=1)
@@ -86,7 +88,7 @@ class Utilities:
         for position_i, sigma_i, epsilon_i in zip(atoms_positions,
                                                   self.atoms_sigma,
                                                   self.atoms_epsilon):
-            r = self.calculate_min_r(position_i, atoms_positions)
+            r = self.calculate_r(position_i, atoms_positions)
             sigma_j = self.atoms_sigma
             epsilon_j = self.atoms_epsilon
             sigma_ij = np.array((sigma_i+sigma_j)/2)
@@ -131,11 +133,11 @@ class Utilities:
         """Re-wrap the atoms that are outside the box."""
         for dim in np.arange(self.dimensions):
             out_ids = self.atoms_positions[:, dim] > self.box_boundaries[dim][1]
-            if np.sum(out_ids) > 0: # tofix : necesary ?
-                self.atoms_positions[:, dim][out_ids] -= np.diff(self.box_boundaries[dim])[0]
+            #if np.sum(out_ids) > 0: # tofix : necesary ?
+            self.atoms_positions[:, dim][out_ids] -= np.diff(self.box_boundaries[dim])[0]
             out_ids = self.atoms_positions[:, dim] < self.box_boundaries[dim][0]
-            if np.sum(out_ids) > 0:
-                self.atoms_positions[:, dim][out_ids] += np.diff(self.box_boundaries[dim])[0]
+            #if np.sum(out_ids) > 0:
+            self.atoms_positions[:, dim][out_ids] += np.diff(self.box_boundaries[dim])[0]
 
     def update_neighbor_lists(self):
         """Update the neighbor lists."""

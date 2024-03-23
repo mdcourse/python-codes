@@ -52,6 +52,7 @@ class InitializeSimulation:
         self.epsilon = epsilon
         self.sigma = sigma
         self.atom_mass = atom_mass
+        self.desired_temperature /= self.reference_temperature
 
     def calculate_LJunits_prefactors(self):
         """Calculate LJ non-dimensional units.
@@ -68,6 +69,8 @@ class InitializeSimulation:
         self.reference_distance = self.sigma[0] # Angstrom
         self.reference_energy = self.epsilon[0] # Kcal/mol
         self.reference_mass = self.atom_mass[0] # g/mol
+        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
+        self.reference_temperature = self.epsilon[0]/kB # K
 
     def identify_atom_properties(self):
         self.total_number_atoms = np.sum(self.number_atoms)

@@ -13,7 +13,7 @@ from Outputs import Outputs
 class MonteCarlo(InitializeSimulation, Utilities, Outputs):
     def __init__(self,
         maximum_steps,
-        cut_off = 25,
+        #cut_off = 25,
         displace_mc=None,
         mu = None,
         *args,
@@ -21,12 +21,12 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         ):
 
         self.maximum_steps = maximum_steps
-        self.cut_off = cut_off
+        #self.cut_off = cut_off
         self.displace_mc = displace_mc
         self.mu = mu
         super().__init__(*args, **kwargs)
 
-        self.cut_off /= self.reference_distance
+        #self.cut_off /= self.reference_distance
         if self.displace_mc is not None:
             self.displace_mc /= self.reference_distance
         if self.mu is not None:
