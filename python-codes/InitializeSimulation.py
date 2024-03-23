@@ -130,7 +130,7 @@ class InitializeSimulation:
         atoms_epsilon = []
         atoms_mass = []
         atoms_type = []
-        for sigma, epsilon, mass, number_atoms, type, charge in zip(self.sigma, self.epsilon,
+        for sigma, epsilon, mass, number_atoms, type in zip(self.sigma, self.epsilon,
                                                             self.atom_mass, self.number_atoms,
                                                             np.arange(len(self.number_atoms))+1):
             atoms_sigma += [sigma] * number_atoms
