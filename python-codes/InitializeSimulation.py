@@ -15,7 +15,6 @@ class InitializeSimulation:
                  epsilon=[0.1],
                  sigma=[1],
                  atom_mass=[1],
-                 atom_charge=[0], # only zero charged are allowed right now
                  seed=None,
                  desired_temperature=300,
                  desired_pressure=1,
@@ -32,7 +31,6 @@ class InitializeSimulation:
         self.epsilon = epsilon
         self.sigma = sigma
         self.atom_mass = atom_mass
-        self.atom_charge = atom_charge
         self.seed = seed
         self.desired_temperature = desired_temperature
         self.desired_pressure = desired_pressure
@@ -97,16 +95,13 @@ class InitializeSimulation:
             assert isinstance(self.sigma, list)
             assert isinstance(self.epsilon, list)
             assert isinstance(self.atom_mass, list)
-            assert isinstance(self.atom_charge, list)
             assert len(self.number_atoms) == len(self.sigma)
             assert len(self.number_atoms) == len(self.epsilon)
             assert len(self.number_atoms) == len(self.atom_mass)
-            assert len(self.number_atoms) == len(self.atom_charge)
         else:
             assert isinstance(self.sigma, int)
             assert isinstance(self.epsilon, int)
             assert isinstance(self.atom_mass, int)
-            assert isinstance(self.atom_charge, int)
             # if entries are integer, convert to list with 1 element
             self.number_atoms = [self.number_atoms]
             self.epsilon = [self.epsilon]
@@ -135,21 +130,17 @@ class InitializeSimulation:
         atoms_epsilon = []
         atoms_mass = []
         atoms_type = []
-        atoms_charge = []
         for sigma, epsilon, mass, number_atoms, type, charge in zip(self.sigma, self.epsilon,
                                                             self.atom_mass, self.number_atoms,
-                                                            np.arange(len(self.number_atoms))+1,
-                                                            self.atom_charge):
+                                                            np.arange(len(self.number_atoms))+1):
             atoms_sigma += [sigma] * number_atoms
             atoms_epsilon += [epsilon] * number_atoms
             atoms_mass += [mass] * number_atoms
             atoms_type += [type] * number_atoms
-            atoms_charge += [charge] * number_atoms
         self.atoms_sigma = np.array(atoms_sigma)
         self.atoms_epsilon = np.array(atoms_epsilon)
         self.atoms_mass = np.array(atoms_mass)
         self.atoms_type = np.array(atoms_type)
-        self.atoms_charge = np.array(atoms_charge)
         
     def populate_box(self):
         """Place atoms at random positions within the box."""
