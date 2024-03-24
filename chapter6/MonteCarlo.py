@@ -30,6 +30,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
             self.monte_carlo_displacement()
             self.wrap_in_box()
             self.update_dump(filename="dump.mc.lammpstrj", velocity=False)
+            self.update_log()
 
     def monte_carlo_displacement(self):
         if self.displace_mc is not None:

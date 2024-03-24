@@ -8,10 +8,12 @@ warnings.filterwarnings('ignore')
 
 class Outputs:
     def __init__(self,
+                 thermo = None,
                  data_folder = "./",
                  dump = None,
                  *args,
                  **kwargs):
+        self.thermo = thermo
         self.dump = dump
         self.data_folder = data_folder
         super().__init__(*args, **kwargs)
@@ -75,3 +77,41 @@ class Outputs:
                             + " " + str(vxyz[2])+"\n") 
                     cpt += 1
                 f.close()
+
+    def update_log(self):
+        if self.thermo is not None:
+            if (self.step % self.thermo == 0) | (self.step == 0):
+                # convert the units
+                volume_A3 = np.prod(self.box_size)*self.reference_distance**3
+                epot_kcalmol = self.calculate_potential_energy(self.atoms_positions) \
+                    * self.reference_energy
+
+                if self.step == 0:         
+                    print('{:<5} {:<5} {:<9} {:<13}'.format(
+                        '%s' % ("step"),
+                        '%s' % ("N"),
+                        '%s' % ("V (A3)"),
+                        '%s' % ("Ep (kcal/mol)"),
+                        ))
+                print('{:<5} {:<5} {:<9} {:<13}'.format(
+                    '%s' % (self.step),
+                    '%s' % (self.total_number_atoms),
+                    '%s' % (f"{volume_A3:.3}"),
+                    '%s' % (f"{epot_kcalmol:.3}"),                      
+                    ))
+
+                for output_value, filename in zip([self.total_number_atoms,
+                                                    epot_kcalmol,
+                                                    volume_A3],
+                                                    ["atom_number.dat",
+                                                    "Epot.dat",
+                                                    "volume.dat"]):
+                    self.write_data_file(output_value, filename)
+
+    def write_data_file(self, output_value, filename):
+        if self.step == 0:
+            myfile = open(self.data_folder + filename, "w")
+        else:
+            myfile = open(self.data_folder + filename, "a")
+        myfile.write(str(self.step) + " " + str(output_value) + "\n")
+        myfile.close()
