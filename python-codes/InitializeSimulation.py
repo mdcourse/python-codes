@@ -125,25 +125,6 @@ class InitializeSimulation:
         box_size = np.diff(self.box_boundaries).reshape(3)
         box_geometry = np.array([90, 90, 90])
         self.box_size = np.array(box_size.tolist()+box_geometry.tolist())
-
-    def identify_atom_properties(self):
-        """Create initial atom array from input parameters"""
-        self.total_number_atoms = np.sum(self.number_atoms)
-        atoms_sigma = []
-        atoms_epsilon = []
-        atoms_mass = []
-        atoms_type = []
-        for sigma, epsilon, mass, number_atoms, type in zip(self.sigma, self.epsilon,
-                                                            self.atom_mass, self.number_atoms,
-                                                            np.arange(len(self.number_atoms))+1):
-            atoms_sigma += [sigma] * number_atoms
-            atoms_epsilon += [epsilon] * number_atoms
-            atoms_mass += [mass] * number_atoms
-            atoms_type += [type] * number_atoms
-        self.atoms_sigma = np.array(atoms_sigma)
-        self.atoms_epsilon = np.array(atoms_epsilon)
-        self.atoms_mass = np.array(atoms_mass)
-        self.atoms_type = np.array(atoms_type)
         
     def populate_box(self):
         """Place atoms at random positions within the box."""
