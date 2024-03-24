@@ -24,6 +24,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         #self.cut_off = cut_off
         self.displace_mc = displace_mc
         self.mu = mu
+        
         super().__init__(*args, **kwargs)
 
         #self.cut_off /= self.reference_distance

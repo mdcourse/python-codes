@@ -42,6 +42,7 @@ class InitializeSimulation:
         self.nondimensionalize_units()
         self.define_box()
         self.identify_atom_properties()
+        self.calculate_cross_coefficients()
         self.populate_box()
         self.set_initial_velocity()
         self.write_lammps_data(filename="initial.data")
@@ -121,7 +122,9 @@ class InitializeSimulation:
             else:
                 box_boundaries[dim] = -self.Lx/2, self.Lx/2
         self.box_boundaries = box_boundaries
-        self.box_size = np.diff(box_boundaries).reshape(3)
+        box_size = np.diff(self.box_boundaries).reshape(3)
+        box_geometry = np.array([90, 90, 90])
+        self.box_size = np.array(box_size.tolist()+box_geometry.tolist())
 
     def identify_atom_properties(self):
         """Create initial atom array from input parameters"""

@@ -41,7 +41,7 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
     def run(self):
         self.perform_energy_minimization()
         for self.step in range(0, self.maximum_steps+1):
-            self.update_neighbor_lists()
+            # self.update_neighbor_lists()
             self.integrate_equation_of_motion()
             self.wrap_in_box()
             self.apply_berendsen_thermostat()

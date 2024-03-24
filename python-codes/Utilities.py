@@ -3,6 +3,9 @@ from decimal import Decimal
 import numpy as np
 import copy
 
+import MDAnalysis as mda
+from MDAnalysis.analysis import distances
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -16,7 +19,7 @@ class Utilities:
         """Perform energy minimmization using the steepest descent method."""
         if self.minimization_steps is not None:
             for self.step in range(0, self.minimization_steps+1):
-                self.update_neighbor_lists()
+                # self.update_neighbor_lists()
                 Epot = self.calculate_potential_energy(self.atoms_positions)
                 trial_atoms_positions = copy.deepcopy(self.atoms_positions)
                 forces = self.evaluate_LJ_force()
@@ -82,7 +85,7 @@ class Utilities:
                             + self.box_size/2., self.box_size) - self.box_size/2.)
         return np.linalg.norm(rij, axis=1)
 
-    def calculate_potential_energy(self, atoms_positions):
+    def calculate_potential_energy_slow(self, atoms_positions):
         """Calculate potential energy from Lennard-Jones potential."""
         energy_potential = 0
         for position_i, sigma_i, epsilon_i in zip(atoms_positions,
@@ -96,6 +99,13 @@ class Utilities:
             energy_potential_i = np.sum(4*epsilon_ij[r>0]*(np.power(sigma_ij[r>0]/r[r>0], 12)-np.power(sigma_ij[r>0]/r[r>0], 6)))
             energy_potential += energy_potential_i
         return energy_potential/2
+    
+    def calculate_potential_energy(self, atoms_positions):
+        """Calculate potential energy from Lennard-Jones potential."""
+        r_ij = mda.analysis.distances.self_distance_array(atoms_positions,
+                                                          self.box_size)
+        energy_potential = np.sum(4*self.array_epsilon_ij*(np.power(self.array_sigma_ij/r_ij, 12)-np.power(self.array_sigma_ij/r_ij, 6)))
+        return energy_potential
     
     def evaluate_LJ_force(self, return_matrix = False):
         if return_matrix:
@@ -139,7 +149,7 @@ class Utilities:
             #if np.sum(out_ids) > 0:
             self.atoms_positions[:, dim][out_ids] += np.diff(self.box_boundaries[dim])[0]
 
-    def update_neighbor_lists(self):
+    def update_neighbor_lists_test(self):
         """Update the neighbor lists."""
         if (self.step % self.neighbor == 0):
             neighbor_lists = []
@@ -156,3 +166,20 @@ class Utilities:
                         a_list.append(Nj) 
                 neighbor_lists.append(a_list.copy())
             self.neighbor_lists = neighbor_lists
+
+    def calculate_cross_coefficients(self):
+        """The LJ cross coefficient are calculated and returned as arrays"""
+        epsilon_ij = []
+        for i in range(self.total_number_atoms):
+            for j in range(i + 1, self.total_number_atoms):
+                epsilon_i = self.atoms_epsilon[i]
+                epsilon_j = self.atoms_epsilon[j]
+                epsilon_ij.append((epsilon_i+epsilon_j)/2)
+        self.array_epsilon_ij = np.array(epsilon_ij)
+        sigma_ij = []
+        for i in range(self.total_number_atoms):
+            for j in range(i + 1, self.total_number_atoms):
+                sigma_i = self.atoms_sigma[i]
+                sigma_j = self.atoms_sigma[j]
+                sigma_ij.append((sigma_i+sigma_j)/2)
+        self.array_sigma_ij = np.array(sigma_ij)
