@@ -15,27 +15,6 @@ class Utilities:
                  **kwargs):
         super().__init__(*args, **kwargs)
 
-    def perform_energy_minimization(self, displacement = 0.01):
-        """Perform energy minimmization using the steepest descent method."""
-        if self.minimization_steps is not None:
-            for self.step in range(0, self.minimization_steps+1):
-                # self.update_neighbor_lists()
-                Epot = self.calculate_potential_energy(self.atoms_positions)
-                trial_atoms_positions = copy.deepcopy(self.atoms_positions)
-                forces = self.evaluate_LJ_force()
-                self.max_forces = np.max(np.abs(forces))
-                trial_atoms_positions = self.atoms_positions + forces/self.max_forces*displacement
-                trial_Epot = self.calculate_potential_energy(trial_atoms_positions)
-                if trial_Epot<Epot: # accept new position
-                    self.atoms_positions = trial_atoms_positions
-                    self.wrap_in_box()
-                    displacement *= 1.2
-                else: # reject new position
-                    displacement *= 0.2
-                self.update_log(minimization = True)
-                self.update_dump(filename="dump.min.lammpstrj",
-                                 velocity=False, minimization = True)
-
     def calculate_kinetic_energy(self):
         """Calculate the kinetic energy based on the velocities of the atoms.
         $Ekin = \sum_{i=1}^Natom 1/2 m_i v_i^2$
@@ -73,7 +52,8 @@ class Utilities:
             position_i = self.atoms_positions[Ni]
             positions_j = self.atoms_positions
             rij_xyz = (np.remainder(position_i - positions_j
-                                    + self.box_size/2., self.box_size) - self.box_size/2.)
+                                    + self.box_size[:3]/2., self.box_size[:3])
+                                    - self.box_size[:3]/2.)
             rij_matrix[Ni] = rij_xyz
         return rij_matrix
 
@@ -82,7 +62,8 @@ class Utilities:
         # to fix : use the MDAnalysis option
         """
         rij = (np.remainder(position_i - positions_j
-                            + self.box_size/2., self.box_size) - self.box_size/2.)
+                            + self.box_size[:3]/2., self.box_size[:3])
+                            - self.box_size[:3]/2.)
         return np.linalg.norm(rij, axis=1)
 
     def calculate_potential_energy_slow(self, atoms_positions):
@@ -123,8 +104,8 @@ class Utilities:
             sigma_j = self.atoms_sigma[neighbor_i]
             epsilon_j = self.atoms_epsilon[neighbor_i]
             rij_xyz = (np.remainder(position_i - positions_j
-                                    + self.box_size/2., self.box_size)
-                                    - self.box_size/2.).T
+                                    + self.box_size[:3]/2., self.box_size[:3])
+                                    - self.box_size[:3]/2.).T
             rij = np.linalg.norm(rij_xyz, axis=0)
             for Nj, sigma_j0, epsilon_j0, rij0, rij_xyz0 in zip(N_j[rij < self.cut_off],
                                             sigma_j[rij < self.cut_off], epsilon_j[rij < self.cut_off],
@@ -149,7 +130,7 @@ class Utilities:
             #if np.sum(out_ids) > 0:
             self.atoms_positions[:, dim][out_ids] += np.diff(self.box_boundaries[dim])[0]
 
-    def update_neighbor_lists_test(self):
+    def update_neighbor_lists(self):
         """Update the neighbor lists."""
         if (self.step % self.neighbor == 0):
             neighbor_lists = []
@@ -159,8 +140,8 @@ class Utilities:
                     position_i = self.atoms_positions[Ni]
                     position_j = self.atoms_positions[Nj]
                     rij_xyz = (np.remainder(position_i - position_j \
-                                            + self.box_size/2., self.box_size) \
-                                            - self.box_size/2.).T
+                                            + self.box_size[:3]/2., self.box_size[:3]) \
+                                            - self.box_size[:3]/2.).T
                     rij = np.sqrt(np.sum(rij_xyz**2))
                     if rij < (self.cut_off+2):
                         a_list.append(Nj) 
@@ -188,6 +169,7 @@ class Utilities:
 
     def calculate_cross_coefficients(self):
         """The LJ cross coefficients are calculated and returned as arrays"""
+        self.identify_atom_properties()
         epsilon_ij = []
         for i in range(self.total_number_atoms):
             epsilon_i = self.atoms_epsilon[i]
@@ -202,3 +184,37 @@ class Utilities:
                 sigma_j = self.atoms_sigma[j]
                 sigma_ij.append((sigma_i+sigma_j)/2)
         self.array_sigma_ij = np.array(sigma_ij)
+
+    def calculate_LJunits_prefactors(self):
+        """Calculate LJ non-dimensional units.
+        Distances, energies, and masses are normalized by
+        the $\sigma$, $\epsilon$, and $m$ parameters from the
+        first type of atom.
+        In addition:
+        - Times are normalized by $\sqrt{m \sigma^2 / \epsilon}$.
+        - Temperature are normalized by $\epsilon/k_\text{B}$, 
+          where $k_\text{B}$ is the Boltzmann constant.
+        - Pressures are normalized by $\epsilon/\sigma^3$.
+        """
+        # Distance, energie, and mass
+        self.reference_distance = self.sigma[0] # Angstrom
+        self.reference_energy = self.epsilon[0] # Kcal/mol
+        self.reference_mass = self.atom_mass[0] # g/mol
+        # Time
+        mass_kg = self.atom_mass[0]/cst.kilo/cst.Avogadro # kg
+        epsilon_J = self.epsilon[0]*cst.calorie*cst.kilo/cst.Avogadro # J
+        sigma_m = self.sigma[0]*cst.angstrom # m
+        time_s = np.sqrt(mass_kg*sigma_m**2/epsilon_J) # s
+        self.reference_time = time_s / cst.femto # fs
+        # Pressure
+        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
+        self.reference_temperature = self.epsilon[0]/kB # K
+        pressure_pa = epsilon_J/sigma_m**3 # Pa
+        self.reference_pressure = pressure_pa/cst.atm # atm
+
+    def set_initial_velocity(self):
+        """Give velocity to atoms so that the initial temperature is the desired one."""
+        self.atoms_velocities = np.random.normal(size=(self.total_number_atoms, self.dimensions))
+        self.calculate_temperature()
+        scale = np.sqrt(1+((self.desired_temperature/self.temperature)-1))
+        self.atoms_velocities *= scale

@@ -136,7 +136,7 @@ class Outputs:
                     cpt += 1
                 f.close()
 
-    def write_lammps_data(self, filename="lammps.data"):
+    def write_data_file(self, filename="lammps.data", velocity = True):
         """Write a LAMMPS-format data file containing atoms positions and velocities"""
         f = open(filename, "w")
         f.write('# LAMMPS data file \n\n')
@@ -154,13 +154,14 @@ class Outputs:
             q = 0
             f.write("%d %d %d %.3f %.3f %.3f %.3f %s"%(cpt, 1, type, q, xyz[0], xyz[1], xyz[2], '\n')) 
             cpt += 1
-        f.write('\n')
-        f.write('Velocities\n')
-        f.write('\n')
-        cpt = 1
-        for vxyz in self.atoms_velocities*self.reference_distance/self.reference_time:
-            f.write("%d %.3f %.3f %.3f %s"%(cpt, vxyz[0], vxyz[1], vxyz[2], '\n')) 
-            cpt += 1
+        if velocity:
+            f.write('\n')
+            f.write('Velocities\n')
+            f.write('\n')
+            cpt = 1
+            for vxyz in self.atoms_velocities*self.reference_distance/self.reference_time:
+                f.write("%d %.3f %.3f %.3f %s"%(cpt, vxyz[0], vxyz[1], vxyz[2], '\n')) 
+                cpt += 1
         f.close()
 
     def write_lammps_parameters(self, filename="PARM.lammps"):

@@ -19,6 +19,8 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
                 cut_off = 10,
                 time_step=1,
                 neighbor=10,
+                desired_temperature = 300,
+                desired_pressure=1,
                 *args,
                 **kwargs,
                 ):
@@ -29,6 +31,8 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
         self.cut_off = cut_off
         self.time_step = time_step
         self.neighbor = neighbor
+        self.desired_temperature=desired_temperature
+        self.desired_pressure=desired_pressure
         super().__init__(*args, **kwargs)
 
         self.cut_off /= self.reference_distance

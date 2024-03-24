@@ -16,6 +16,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         #cut_off = 25,
         displace_mc=None,
         mu = None,
+        desired_temperature = 300,
         *args,
         **kwargs,
         ):
@@ -24,6 +25,7 @@ class MonteCarlo(InitializeSimulation, Utilities, Outputs):
         #self.cut_off = cut_off
         self.displace_mc = displace_mc
         self.mu = mu
+        self.desired_temperature=desired_temperature
         
         super().__init__(*args, **kwargs)
 
