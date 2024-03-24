@@ -127,7 +127,7 @@ class Utilities:
         if (self.step % self.neighbor == 0):
 
             matrix = distances.contact_matrix(self.atoms_positions,
-                cutoff=self.cut_off+2,
+                cutoff=self.cut_off, #+2,
                 returntype="numpy",
                 box=self.box_size)
 
