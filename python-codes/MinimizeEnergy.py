@@ -21,9 +21,16 @@ class MinimizeEnergy(InitializeSimulation):
         self.neighbor = neighbor
         self.cut_off = cut_off
         self.displacement = displacement
-
         self.minimization_steps = minimization_steps
+
         super().__init__(*args, **kwargs)
+
+        self.nondimensionalize_units_2()
+
+    def nondimensionalize_units_2(self):
+        """Use LJ prefactors to convert units into non-dimensional."""
+        self.cut_off = self.cut_off/self.reference_distance
+        self.displacement = self.displacement/self.reference_distance
 
     def perform_energy_minimization(self):
         """Perform energy minimmization using the steepest descent method."""
