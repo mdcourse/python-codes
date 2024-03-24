@@ -66,58 +66,70 @@ class Utilities:
                             - self.box_size[:3]/2.)
         return np.linalg.norm(rij, axis=1)
 
-    def calculate_potential_energy_slow(self, atoms_positions):
+    def calculate_potential_energy(self):
         """Calculate potential energy from Lennard-Jones potential."""
+        # to fix : wont work for insert/delete ... 
         energy_potential = 0
-        for position_i, sigma_i, epsilon_i in zip(atoms_positions,
-                                                  self.atoms_sigma,
-                                                  self.atoms_epsilon):
-            r = self.calculate_r(position_i, atoms_positions)
-            sigma_j = self.atoms_sigma
-            epsilon_j = self.atoms_epsilon
-            sigma_ij = np.array((sigma_i+sigma_j)/2)
-            epsilon_ij = np.array((epsilon_i+epsilon_j)/2)
-            energy_potential_i = np.sum(4*epsilon_ij[r>0]*(np.power(sigma_ij[r>0]/r[r>0], 12)-np.power(sigma_ij[r>0]/r[r>0], 6)))
-            energy_potential += energy_potential_i
-        return energy_potential/2
-    
-    def calculate_potential_energy(self, atoms_positions):
-        """Calculate potential energy from Lennard-Jones potential."""
-        r_ij = mda.analysis.distances.self_distance_array(atoms_positions,
-                                                          self.box_size)
-        energy_potential = np.sum(4*self.array_epsilon_ij*(np.power(self.array_sigma_ij/r_ij, 12)-np.power(self.array_sigma_ij/r_ij, 6)))
-        return energy_potential
-    
-    def evaluate_LJ_force(self, return_matrix = False):
-        if return_matrix:
-            forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
-        else:
-            forces = np.zeros((self.total_number_atoms,3))
-        for Ni, position_i, sigma_i, epsilon_i, neighbor_i in zip(np.arange(self.total_number_atoms-1),
+        for Ni, position_i, sigma_i, epsilon_i, neighbor_of_i in zip(np.arange(self.total_number_atoms-1),
                                                     self.atoms_positions,
                                                     self.atoms_sigma,
                                                     self.atoms_epsilon,
                                                     self.neighbor_lists):
-            
-            N_j = np.arange(self.total_number_atoms)[neighbor_i]
-            positions_j = self.atoms_positions[neighbor_i]
-            sigma_j = self.atoms_sigma[neighbor_i]
-            epsilon_j = self.atoms_epsilon[neighbor_i]
+
+            # Read information about neighbors
+            positions_j = self.atoms_positions[neighbor_of_i]
+            sigma_j = self.atoms_sigma[neighbor_of_i]
+            epsilon_j = self.atoms_epsilon[neighbor_of_i]
+            # Measure distances and other cross parameters
             rij_xyz = (np.remainder(position_i - positions_j
                                     + self.box_size[:3]/2., self.box_size[:3])
-                                    - self.box_size[:3]/2.).T
-            rij = np.linalg.norm(rij_xyz, axis=0)
-            for Nj, sigma_j0, epsilon_j0, rij0, rij_xyz0 in zip(N_j[rij < self.cut_off],
-                                            sigma_j[rij < self.cut_off], epsilon_j[rij < self.cut_off],
-                                            rij[rij < self.cut_off], rij_xyz.T[rij < self.cut_off]):
-                sigma_ij = (sigma_i+sigma_j0)/2
-                epsilon_ij = (epsilon_i+epsilon_j0)/2
-                dU_dr = 48*epsilon_ij/rij0*((sigma_ij/rij0)**12-0.5*(sigma_ij/rij0)**6)
-                if return_matrix:
-                    forces[Ni][Nj] += dU_dr*rij_xyz0/rij0
-                else:
-                    forces[Ni] += dU_dr*rij_xyz0/rij0
-                    forces[Nj] -= dU_dr*rij_xyz0/rij0
+                                    - self.box_size[:3]/2.)
+            rij = np.linalg.norm(rij_xyz, axis=1)
+            sigma_ij = (sigma_i+sigma_j)/2
+            epsilon_ij = (epsilon_i+epsilon_j)/2
+            # Measure potential
+            energy_potential += np.sum(4*epsilon_ij*((sigma_ij/rij)**12-(sigma_ij/rij)**6))
+        return energy_potential
+    
+    def calculate_potential_energy_fast(self, atoms_positions):
+        """Calculate potential energy from Lennard-Jones potential."""
+        # PB : no neighbor list --> remove ?
+        r_ij = mda.analysis.distances.self_distance_array(atoms_positions,
+                                                          self.box_size)
+        energy_potential = np.sum(4*self.array_epsilon_ij*(np.power(self.array_sigma_ij/r_ij, 12)-np.power(self.array_sigma_ij/r_ij, 6)))
+        return energy_potential
+
+    def evaluate_LJ_force(self, return_matrix = False):
+        # Define the "force" matrice
+        if return_matrix:
+            forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        else:
+            forces = np.zeros((self.total_number_atoms,3))
+        # loop on all the the atoms
+        for Ni, position_i, sigma_i, epsilon_i, neighbor_of_i in zip(np.arange(self.total_number_atoms-1),
+                                                    self.atoms_positions,
+                                                    self.atoms_sigma,
+                                                    self.atoms_epsilon,
+                                                    self.neighbor_lists):
+
+            # Read information about neighbors
+            positions_j = self.atoms_positions[neighbor_of_i]
+            sigma_j = self.atoms_sigma[neighbor_of_i]
+            epsilon_j = self.atoms_epsilon[neighbor_of_i]
+            # Measure distances and other cross parameters
+            rij_xyz = (np.remainder(position_i - positions_j
+                                    + self.box_size[:3]/2., self.box_size[:3])
+                                    - self.box_size[:3]/2.)
+            rij = np.linalg.norm(rij_xyz, axis=1)
+            sigma_ij = (sigma_i+sigma_j)/2
+            epsilon_ij = (epsilon_i+epsilon_j)/2
+            # Measure forces
+            dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
+            if return_matrix:
+                forces[Ni][neighbor_of_i] += (dU_dr*rij_xyz.T/rij).T
+            else:
+                forces[Ni] += np.sum((dU_dr*rij_xyz.T/rij).T, axis=0)
+                forces[neighbor_of_i] -= (dU_dr*rij_xyz.T/rij).T      
         return forces
     
     def wrap_in_box(self):
