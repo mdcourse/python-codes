@@ -9,10 +9,10 @@ from Outputs import Outputs
 class InitializeSimulation(Utilities, Outputs):
     def __init__(self,
                  number_atoms=[10], # List
-                 box_dimensions=[10, 10, 10], # List
                  epsilon=[0.1], # List
                  sigma=[1], # List
                  atom_mass=[1], # List
+                 box_dimensions=[10, 10, 10], # List
                  seed=None, # Int
                  initial_positions=None,
                  *args,

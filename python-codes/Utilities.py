@@ -66,17 +66,27 @@ class Utilities:
                             - self.box_size[:3]/2.)
         return np.linalg.norm(rij, axis=1)
 
-    def calculate_potential_energy(self):
-        """Calculate potential energy from Lennard-Jones potential."""
-        # to fix : wont work for insert/delete ... 
-        energy_potential = 0
-        for Ni, position_i, sigma_i, epsilon_i, neighbor_of_i in zip(np.arange(self.total_number_atoms-1),
-                                                    self.atoms_positions,
-                                                    self.atoms_sigma,
-                                                    self.atoms_epsilon,
-                                                    self.neighbor_lists):
+    def LJ_derivative_potential(self, epsilon, sigma, r):
+        return 48*epsilon*((sigma/r)**12-0.5*(sigma/r)**6)/r
 
-            # Read information about neighbors
+    def LJ_potential(self, epsilon, sigma, r):
+        return 4*epsilon*((sigma/r)**12-(sigma/r)**6)
+
+    def calculate_LJ_potential_force(self, output="potential"):
+        """Calculate potential and force from Lennard-Jones potential."""
+        # to fix : wont work for insert/delete ... 
+        if output == "force-vector":
+            forces = np.zeros((self.total_number_atoms,3))
+        elif output == "force-matrix":
+            forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        energy_potential = 0
+        for Ni in np.arange(self.total_number_atoms-1):
+            # Read information about atom i
+            position_i = self.atoms_positions[Ni]
+            sigma_i = self.atoms_sigma[Ni]
+            epsilon_i = self.atoms_epsilon[Ni]
+            neighbor_of_i = self.neighbor_lists[Ni]
+            # Read information about neighbors j
             positions_j = self.atoms_positions[neighbor_of_i]
             sigma_j = self.atoms_sigma[neighbor_of_i]
             epsilon_j = self.atoms_epsilon[neighbor_of_i]
@@ -88,49 +98,19 @@ class Utilities:
             sigma_ij = (sigma_i+sigma_j)/2
             epsilon_ij = (epsilon_i+epsilon_j)/2
             # Measure potential
-            energy_potential += np.sum(4*epsilon_ij*((sigma_ij/rij)**12-(sigma_ij/rij)**6))
-        return energy_potential
-    
-    def calculate_potential_energy_fast(self, atoms_positions):
-        """Calculate potential energy from Lennard-Jones potential."""
-        # PB : no neighbor list --> remove ?
-        r_ij = mda.analysis.distances.self_distance_array(atoms_positions,
-                                                          self.box_size)
-        energy_potential = np.sum(4*self.array_epsilon_ij*(np.power(self.array_sigma_ij/r_ij, 12)-np.power(self.array_sigma_ij/r_ij, 6)))
-        return energy_potential
-
-    def evaluate_LJ_force(self, return_matrix = False):
-        # Define the "force" matrice
-        if return_matrix:
-            forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
-        else:
-            forces = np.zeros((self.total_number_atoms,3))
-        # loop on all the the atoms
-        for Ni, position_i, sigma_i, epsilon_i, neighbor_of_i in zip(np.arange(self.total_number_atoms-1),
-                                                    self.atoms_positions,
-                                                    self.atoms_sigma,
-                                                    self.atoms_epsilon,
-                                                    self.neighbor_lists):
-
-            # Read information about neighbors
-            positions_j = self.atoms_positions[neighbor_of_i]
-            sigma_j = self.atoms_sigma[neighbor_of_i]
-            epsilon_j = self.atoms_epsilon[neighbor_of_i]
-            # Measure distances and other cross parameters
-            rij_xyz = (np.remainder(position_i - positions_j
-                                    + self.box_size[:3]/2., self.box_size[:3])
-                                    - self.box_size[:3]/2.)
-            rij = np.linalg.norm(rij_xyz, axis=1)
-            sigma_ij = (sigma_i+sigma_j)/2
-            epsilon_ij = (epsilon_i+epsilon_j)/2
-            # Measure forces
-            dU_dr = 48*epsilon_ij/rij*((sigma_ij/rij)**12-0.5*(sigma_ij/rij)**6)
-            if return_matrix:
-                forces[Ni][neighbor_of_i] += (dU_dr*rij_xyz.T/rij).T
+            if output == "potential":
+                energy_potential += np.sum(self.LJ_potential(epsilon_ij, sigma_ij, rij))
             else:
-                forces[Ni] += np.sum((dU_dr*rij_xyz.T/rij).T, axis=0)
-                forces[neighbor_of_i] -= (dU_dr*rij_xyz.T/rij).T      
-        return forces
+                derivative_potential = self.LJ_derivative_potential(epsilon_ij, sigma_ij, rij)
+                if output == "force-vector":
+                    forces[Ni] += np.sum((derivative_potential*rij_xyz.T/rij).T, axis=0)
+                    forces[neighbor_of_i] -= (derivative_potential*rij_xyz.T/rij).T 
+                elif output == "force-matrix":
+                    forces[Ni][neighbor_of_i] += (derivative_potential*rij_xyz.T/rij).T
+        if output=="potential":
+            return energy_potential
+        elif (output == "force-vector") | (output == "force-matrix"):
+            return forces
     
     def wrap_in_box(self):
         """Re-wrap the atoms that are outside the box."""
@@ -143,6 +123,25 @@ class Utilities:
             self.atoms_positions[:, dim][out_ids] += np.diff(self.box_boundaries[dim])[0]
 
     def update_neighbor_lists(self):
+        """Update the neighbor lists."""
+        if (self.step % self.neighbor == 0):
+
+            matrix = distances.contact_matrix(self.atoms_positions,
+                cutoff=self.cut_off+2,
+                returntype="numpy",
+                box=self.box_size)
+
+            cpt = 0
+            neighbor_lists = []
+            for array in matrix[:-1]:
+                list = np.where(array)[0].tolist()
+                list = [ele for ele in list if ele > cpt]
+                cpt += 1
+                neighbor_lists.append(list)
+
+            self.neighbor_lists = neighbor_lists
+
+    def update_neighbor_lists_slow(self):
         """Update the neighbor lists."""
         if (self.step % self.neighbor == 0):
             neighbor_lists = []
