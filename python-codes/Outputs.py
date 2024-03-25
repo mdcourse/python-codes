@@ -178,10 +178,10 @@ class Outputs():
         f.write('# LAMMPS variable file \n\n')
         f.write('variable thermo equal ' + str(self.thermo) + '\n')
         f.write('variable dump equal ' + str(self.dump) + '\n')
-        f.write('variable thermo_minimize equal ' + str(self.thermo_minimize) + '\n')
-        f.write('variable dumping_minimize equal ' + str(self.dumping_minimize) + '\n')
+        # f.write('variable thermo_minimize equal ' + str(self.thermo_minimize) + '\n')
+        # f.write('variable dumping_minimize equal ' + str(self.dumping_minimize) + '\n')
         f.write('variable time_step equal ' + str(self.time_step*self.reference_time) + '\n')
-        f.write('variable minimization_steps equal ' + str(self.minimization_steps) + '\n')
+        # f.write('variable minimization_steps equal ' + str(self.minimization_steps) + '\n')
         f.write('variable maximum_steps equal ' + str(self.maximum_steps) + '\n')
         kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
         f.write('variable temp equal ' + str(self.desired_temperature*self.reference_energy/kB) + '\n')
