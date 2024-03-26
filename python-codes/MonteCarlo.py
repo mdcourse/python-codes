@@ -30,7 +30,10 @@ class MonteCarlo(InitializeSimulation):
         self.inserted_type = inserted_type
         self.desired_temperature = desired_temperature
         self.beta =  1/self.desired_temperature
-        self.neighbor = neighbor
+        if self.desired_mu is not None:
+            self.neighbor = 1
+        else:
+            self.neighbor = neighbor
         
         super().__init__(*args, **kwargs)
 
@@ -75,61 +78,52 @@ class MonteCarlo(InitializeSimulation):
 
     def calculate_Lambda(self, mass):
         """Estimate de Broglie wavelength in LJ units."""
-        m_kg = mass/cst.Avogadro*cst.milli
+        m_kg = mass/cst.Avogadro*cst.milli # kg
         kB_kCal_mol_K = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo
-        T_K = self.desired_temperature*self.reference_energy/kB_kCal_mol_K
-        Lambda = cst.h/np.sqrt(2*np.pi*cst.Boltzmann*m_kg*T_K)/cst.angstrom
-        return self.nondimensionalise_units(Lambda, "distance")
+        T_K = self.desired_temperature*self.reference_energy/kB_kCal_mol_K # K
+        Lambda = cst.h/np.sqrt(2*np.pi*cst.Boltzmann*m_kg*T_K)/cst.angstrom # Angstrom
+        return Lambda / self.reference_distance # dimensionless
 
     def monte_carlo_insert_delete(self):
         if self.desired_mu is not None:
             initial_Epot = self.calculate_LJ_potential_force(output="potential")
             initial_positions = copy.deepcopy(self.atoms_positions)
-            initial_number_atoms = self.number_atoms
+            initial_number_atoms = copy.deepcopy(self.number_atoms)
+            volume = np.prod(np.diff(self.box_boundaries))
             if np.random.random() < 0.5:
                 # Try adding an atom
-                try_number_atoms = self.total_number_atoms + 1
-                initial_number_atoms[self.inserted_type] += 1
+                self.number_atoms[self.inserted_type] += 1
                 atom_position = np.zeros((1, self.dimensions))
                 for dim in np.arange(self.dimensions):
                     atom_position[:, dim] = np.random.random(1)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2
-                self.atoms_positions = np.vstack([initial_positions, atom_position])
-
+                shift_id = 0
+                for N in self.number_atoms[:self.inserted_type]:
+                    shift_id += N
+                self.atoms_positions = np.vstack([self.atoms_positions[:shift_id], atom_position, self.atoms_positions[shift_id:]])
+                self.update_neighbor_lists()
+                self.calculate_cross_coefficients()
                 trial_Epot = self.calculate_LJ_potential_force(output="potential")
                 Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
-                volume = np.prod(np.diff(self.box_boundaries))
-                acceptation_probability = np.min([1, volume/(Lambda**self.dimensions*(self.number_atoms + 1))*np.exp(beta*(self.desired_mu-trial_Epot+Epot))])
-
-
-
-            Epot = self.calculate_potential_energy(self.atoms_positions)
-            trial_atoms_positions = copy.deepcopy(self.atoms_positions)
-            if np.random.random() < 0.5:
-                total_number_atoms = self.total_number_atoms + 1
-                atom_position = np.zeros((1, self.dimensions))
-                for dim in np.arange(self.dimensions):
-                    atom_position[:, dim] = np.random.random(1)*np.diff(self.box_boundaries[dim]) - np.diff(self.box_boundaries[dim])/2
-                trial_atoms_positions = np.vstack([trial_atoms_positions, atom_position])
-                trial_Epot = self.calculate_potential_energy(trial_atoms_positions) # tocheck number_atoms = total_number_atoms)
-                Lambda = self.calculate_Lambda(self.atom_mass)
-                volume = np.prod(np.diff(self.box_boundaries))
-                beta = 1/self.desired_temperature
-                acceptation_probability = np.min([1, volume/(Lambda**self.dimensions*(self.number_atoms + 1))*np.exp(beta*(self.desired_mu-trial_Epot+Epot))])
+                acceptation_probability = np.min([1, volume/(Lambda**self.dimensions*(self.total_number_atoms))*np.exp(self.beta*(self.desired_mu-trial_Epot+initial_Epot))])
             else:
-                number_atoms = self.total_number_atoms - 1
-                if number_atoms > 0:
-                    atom_id = np.random.randint(self.total_number_atoms)
-                    trial_atoms_positions = np.delete(trial_atoms_positions, atom_id, axis=0)
-                    trial_Epot = self.calculate_potential_energy(trial_atoms_positions) # tocheck number_atoms = number_atoms)
-                    Lambda = self.calculate_Lambda(self.atom_mass)
-                    volume = np.prod(np.diff(self.box_boundaries))
-                    beta = 1/self.desired_temperature
-                    acceptation_probability = np.min([1, (Lambda**self.dimensions*(self.number_atoms)/volume)*np.exp(-beta*(self.desired_mu+trial_Epot-Epot))])
+                # Pick one atom to delete randomly
+                atom_id = np.random.randint(self.number_atoms[self.inserted_type])
+                self.number_atoms[self.inserted_type] -= 1
+                if self.number_atoms[self.inserted_type] > 0:
+                    shift_id = 0
+                    for N in self.number_atoms[:self.inserted_type]:
+                        shift_id += N
+                    self.atoms_positions = np.delete(self.atoms_positions, shift_id+atom_id, axis=0)
+                    self.update_neighbor_lists()
+                    self.calculate_cross_coefficients()
+                    trial_Epot = self.calculate_LJ_potential_force(output="potential")
+                    Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
+                    acceptation_probability = np.min([1, (Lambda**self.dimensions*(self.total_number_atoms-1)/volume)*np.exp(-self.beta*(self.desired_mu+trial_Epot-initial_Epot))])
                 else:
                     acceptation_probability = 0
-            if np.random.random() < acceptation_probability:
-                self.atoms_positions = trial_atoms_positions
-                self.Epot = trial_Epot
-                self.total_number_atoms = number_atoms # will have to be fixed ...
-            else:
-                self.Epot = Epot
+            if np.random.random() < acceptation_probability: # Accept new position
+                pass
+            else: # Reject new position
+                self.atoms_positions = initial_positions
+                self.number_atoms = initial_number_atoms
+                self.calculate_cross_coefficients()
