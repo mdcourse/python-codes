@@ -19,7 +19,7 @@ class Utilities:
         """Calculate the kinetic energy based on the velocities of the atoms.
         $Ekin = \sum_{i=1}^Natom 1/2 m_i v_i^2$
         """
-        self.Ekin = np.sum(self.atoms_mass*(self.atoms_velocities.T)**2)/2
+        self.Ekin = np.sum(self.atoms_mass*(self.atoms_velocities.T)**2)/2 # tofix atoms of different masses
 
     def calculate_temperature(self):
         """ Follow the expression given in the LAMMPS documentation
