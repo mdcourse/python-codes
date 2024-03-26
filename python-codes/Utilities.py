@@ -42,7 +42,7 @@ class Utilities:
         volume = np.prod(self.box_size)
         self.calculate_temperature()
         p_ideal = (Ndof/self.dimensions)*self.temperature/volume
-        p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.evaluate_LJ_force(return_matrix=True)*self.evaluate_rij_matrix())
+        p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.calculate_LJ_potential_force(output="force-matrix")*self.evaluate_rij_matrix())
         self.pressure = (p_ideal+p_non_ideal)
 
     def evaluate_rij_matrix(self):
@@ -72,7 +72,7 @@ class Utilities:
     def LJ_potential(self, epsilon, sigma, r):
         return 4*epsilon*((sigma/r)**12-(sigma/r)**6)
 
-    def calculate_LJ_potential_force(self, output="potential"):
+    def calculate_LJ_potential_force(self, output):
         """Calculate potential and force from Lennard-Jones potential."""
         # to fix : wont work for insert/delete ... 
         if output == "force-vector":

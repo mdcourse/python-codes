@@ -37,8 +37,8 @@ class InitializeSimulation(Utilities, Outputs):
         self.define_box()
         self.calculate_cross_coefficients()
         self.populate_box()
-        self.write_data_file(filename="initial.data",
-                               velocity=False)
+        self.write_topology_file(filename="initial.data",
+                                 velocity=False)
 
     def nondimensionalize_units_1(self):
         """Use LJ prefactors to convert units into non-dimensional."""

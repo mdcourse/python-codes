@@ -56,7 +56,7 @@ class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
             self.wrap_in_box()
             self.apply_berendsen_thermostat()
             self.apply_berendsen_barostat()
-            #self.update_log()
+            self.update_log()
             self.update_dump(filename = "dump.md.lammpstrj")
         #self.write_lammps_data(filename = "final.data")
         #self.write_lammps_parameters()

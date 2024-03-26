@@ -10,7 +10,7 @@ class Outputs():
     def __init__(self,
                  thermo = None,
                  dump = None,
-                 data_folder = "./",
+                 data_folder = "Outputs/",
                  *args,
                  **kwargs):
         self.thermo = thermo
@@ -40,7 +40,7 @@ class Outputs():
                 temperature_K = self.temperature * self.reference_temperature
                 pressure_atm = self.pressure * self.reference_pressure
                 volume_A3 = np.prod(self.box_size)*self.reference_distance**3
-                epot_kcalmol = self.calculate_potential_energy(self.atoms_positions) \
+                epot_kcalmol = self.calculate_LJ_potential_force(output="potential") \
                     * self.reference_energy
                 ekin_kcalmol = self.Ekin*self.reference_energy
                 density_gmolA3 = self.evaluate_density() * self.reference_mass/self.reference_distance**3
@@ -126,7 +126,7 @@ class Outputs():
                     cpt += 1
                 f.close()
 
-    def write_data_file(self, filename="lammps.data", velocity = True):
+    def write_topology_file(self, filename="lammps.data", velocity = True):
         """Write a LAMMPS-format data file containing atoms positions and velocities"""
         f = open(filename, "w")
         f.write('# LAMMPS data file \n\n')
