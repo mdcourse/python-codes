@@ -2,13 +2,12 @@ from scipy import constants as cst
 import numpy as np
 import copy, os
 
-from Utilities import Utilities
 from Measurements import Measurements
 
 import warnings
 warnings.filterwarnings('ignore')
 
-class Outputs(Utilities, Measurements):
+class Outputs(Measurements):
     def __init__(self,
                  thermo = None,
                  dump = None,
@@ -128,33 +127,6 @@ class Outputs(Utilities, Measurements):
                     cpt += 1
                 f.close()
 
-    def write_topology_file(self, filename="lammps.data", velocity = True):
-        """Write a LAMMPS-format data file containing atoms positions and velocities"""
-        f = open(filename, "w")
-        f.write('# LAMMPS data file \n\n')
-        f.write("%d %s"%(self.total_number_atoms, 'atoms\n')) 
-        f.write("%d %s"%(np.max(self.atoms_type), 'atom types\n')) 
-        f.write('\n')
-        for LminLmax, dim in zip(self.box_boundaries*self.reference_distance, ["x", "y", "z"]):
-            f.write("%.3f %.3f %s %s"%(LminLmax[0],LminLmax[1], dim+'lo', dim+'hi\n')) 
-        f.write('\n')
-        f.write('Atoms\n')
-        f.write('\n')
-        cpt = 1
-        for type, xyz in zip(self.atoms_type,
-                             self.atoms_positions*self.reference_distance):
-            q = 0
-            f.write("%d %d %d %.3f %.3f %.3f %.3f %s"%(cpt, 1, type, q, xyz[0], xyz[1], xyz[2], '\n')) 
-            cpt += 1
-        if velocity:
-            f.write('\n')
-            f.write('Velocities\n')
-            f.write('\n')
-            cpt = 1
-            for vxyz in self.atoms_velocities*self.reference_distance/self.reference_time:
-                f.write("%d %.3f %.3f %.3f %s"%(cpt, vxyz[0], vxyz[1], vxyz[2], '\n')) 
-                cpt += 1
-        f.close()
 
     def write_lammps_parameters(self, filename="PARM.lammps"):
         """Write a LAMMPS-format parameters file"""
