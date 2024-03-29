@@ -3,11 +3,12 @@ import numpy as np
 import copy, os
 
 from Utilities import Utilities
+from Measurements import Measurements
 
 import warnings
 warnings.filterwarnings('ignore')
 
-class Outputs(Utilities):
+class Outputs(Utilities, Measurements):
     def __init__(self,
                  thermo = None,
                  dump = None,

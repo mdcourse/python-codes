@@ -44,10 +44,6 @@ class Utilities:
         p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.calculate_LJ_potential_force(output="force-matrix")*self.evaluate_rij_matrix())
         self.pressure = (p_ideal+p_non_ideal)
 
-    def calculate_rdf(self):
-        r = np.linalg.norm(self.evaluate_rij_matrix(), axis=2)
-
-
     def evaluate_rij_matrix(self):
         """Matrix of vectors between all particles."""
         rij_matrix = np.zeros((self.total_number_atoms,self.total_number_atoms,3))

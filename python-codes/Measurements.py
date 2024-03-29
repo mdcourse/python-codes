@@ -1,16 +1,12 @@
 from scipy import constants as cst
 import numpy as np
 
-import MDAnalysis as mda
-from MDAnalysis.analysis import distances
-
 import warnings
 warnings.filterwarnings('ignore')
 
-from Utilities import Utilities
 from InitializeSimulation import InitializeSimulation
 
-class Measurements(Utilities, InitializeSimulation):
+class Measurements(InitializeSimulation):
     def __init__(self,
                  min_bin = 1,
                  max_bin = 15,
@@ -31,4 +27,7 @@ class Measurements(Utilities, InitializeSimulation):
 
     def calculate_rdf(self):
         r = np.linalg.norm(self.evaluate_rij_matrix(), axis=2)
+        histogram, bin_boundaries = np.histogram(r, bins = self.number_bins, range= (self.min_bin,3))
+        bin_centers = (bin_boundaries[1:]+bin_boundaries[:-1])/2
+        return bin_centers, histogram
 
