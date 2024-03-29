@@ -3,10 +3,9 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
-from Utilities import Utilities
 from Outputs import Outputs
 
-class InitializeSimulation(Utilities, Outputs):
+class InitializeSimulation(Outputs):
     def __init__(self,
                  number_atoms=[10], # List
                  epsilon=[0.1], # List

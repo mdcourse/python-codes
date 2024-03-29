@@ -1,12 +1,13 @@
 from scipy import constants as cst
-from decimal import Decimal
 import numpy as np
-import copy, sys, os
+import copy, os
+
+from Utilities import Utilities
 
 import warnings
 warnings.filterwarnings('ignore')
 
-class Outputs():
+class Outputs(Utilities):
     def __init__(self,
                  thermo = None,
                  dump = None,

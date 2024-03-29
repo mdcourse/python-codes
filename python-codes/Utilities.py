@@ -1,7 +1,5 @@
 from scipy import constants as cst
-from decimal import Decimal
 import numpy as np
-import copy
 
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances

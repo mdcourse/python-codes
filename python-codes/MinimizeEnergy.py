@@ -5,8 +5,6 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from InitializeSimulation import InitializeSimulation
-from Utilities import Utilities
-from Outputs import Outputs
 
 class MinimizeEnergy(InitializeSimulation):
     def __init__(self,

@@ -1,16 +1,11 @@
-from scipy import constants as cst
-from decimal import Decimal
 import numpy as np
-import copy
 
 import warnings
 warnings.filterwarnings('ignore')
 
 from InitializeSimulation import InitializeSimulation
-from Utilities import Utilities
-from Outputs import Outputs
 
-class MolecularDynamics(InitializeSimulation, Utilities, Outputs):
+class MolecularDynamics(InitializeSimulation):
     def __init__(self,
                 maximum_steps,
                 tau_temp = None,
