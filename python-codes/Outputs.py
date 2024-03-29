@@ -44,7 +44,7 @@ class Outputs(Utilities):
                 epot_kcalmol = self.calculate_LJ_potential_force(output="potential") \
                     * self.reference_energy
                 ekin_kcalmol = self.Ekin*self.reference_energy
-                density_gmolA3 = self.evaluate_density() * self.reference_mass/self.reference_distance**3
+                density_gmolA3 = self.calculate_density() * self.reference_mass/self.reference_distance**3
                 density_gcm3 = density_gmolA3/6.022e23*(1e8)**3
 
                 if self.step == 0:         

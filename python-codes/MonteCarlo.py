@@ -6,8 +6,9 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from InitializeSimulation import InitializeSimulation
+from Measurements import Measurements
 
-class MonteCarlo(InitializeSimulation):
+class MonteCarlo(InitializeSimulation, Measurements):
     def __init__(self,
         maximum_steps,
         cut_off = 9,
@@ -47,7 +48,8 @@ class MonteCarlo(InitializeSimulation):
 
     def run(self):
         """Perform the loop over time."""
-        
+        self.write_topology_file(filename="initial.data",
+                                 velocity=False)
         for self.step in range(0, self.maximum_steps+1):
             self.update_neighbor_lists()
             self.monte_carlo_displacement()

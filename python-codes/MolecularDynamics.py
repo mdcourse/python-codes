@@ -4,8 +4,9 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from InitializeSimulation import InitializeSimulation
+from Measurements import Measurements
 
-class MolecularDynamics(InitializeSimulation):
+class MolecularDynamics(InitializeSimulation, Measurements):
     def __init__(self,
                 maximum_steps,
                 tau_temp = None,
@@ -44,6 +45,8 @@ class MolecularDynamics(InitializeSimulation):
             self.tau_press /= self.reference_time
     
     def run(self):
+        self.write_topology_file(filename="initial.data",
+                                 velocity=False)
         self.set_initial_velocity()
         for self.step in range(0, self.maximum_steps+1):
             self.update_neighbor_lists()
