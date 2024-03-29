@@ -4,12 +4,13 @@ from scipy import constants as cst
 import warnings
 warnings.filterwarnings('ignore')
 
+
 class Prepare:
     def __init__(self,
-                 number_atoms=[10], # List
-                 epsilon=[0.1], # List - Kcal/mol
-                 sigma=[1], # List - Angstrom
-                 atom_mass=[1], # List - g/mol
+                 number_atoms=[10],  # List
+                 epsilon=[0.1],  # List - Kcal/mol
+                 sigma=[1],  # List - Angstrom
+                 atom_mass=[1],  # List - g/mol
                  *args,
                  **kwargs,
                  ):
@@ -19,13 +20,13 @@ class Prepare:
         self.epsilon = epsilon
         self.sigma = sigma
         self.atom_mass = atom_mass
-        
+
         self.nondimensionalize_units_0()
         self.calculate_LJunits_prefactors()
         self.calculate_cross_coefficients()
 
     def nondimensionalize_units_0(self):
-        """Use LJ prefactors to convert units into non-dimensional."""
+        r"""Use LJ prefactors to convert units into non-dimensional."""
         # Normalize LJ properties
         epsilon, sigma, atom_mass = [], [], []
         for e0, s0, m0 in zip(self.epsilon, self.sigma, self.atom_mass):
@@ -37,15 +38,16 @@ class Prepare:
         self.atom_mass = atom_mass
 
     def identify_atom_properties(self):
-        """Create initial atom array from input parameters"""
+        r"""Create initial atom array from input parameters"""
         self.total_number_atoms = np.sum(self.number_atoms)
         atoms_sigma = []
         atoms_epsilon = []
         atoms_mass = []
         atoms_type = []
-        for sigma, epsilon, mass, number_atoms, type in zip(self.sigma, self.epsilon,
-                                                            self.atom_mass, self.number_atoms,
-                                                            np.arange(len(self.number_atoms))+1):
+        for parts in zip(self.sigma, self.epsilon,
+                         self.atom_mass, self.number_atoms,
+                         np.arange(len(self.number_atoms))+1):
+            sigma, epsilon, mass, number_atoms, type = parts
             atoms_sigma += [sigma] * number_atoms
             atoms_epsilon += [epsilon] * number_atoms
             atoms_mass += [mass] * number_atoms
@@ -56,7 +58,7 @@ class Prepare:
         self.atoms_type = np.array(atoms_type)
 
     def calculate_cross_coefficients(self):
-        """The LJ cross coefficients are calculated and returned as arrays"""
+        r"""The LJ cross coefficients are calculated and returned as arrays"""
         self.identify_atom_properties()
         epsilon_ij = []
         for i in range(self.total_number_atoms):
@@ -74,29 +76,28 @@ class Prepare:
         self.array_sigma_ij = np.array(sigma_ij)
 
     def calculate_LJunits_prefactors(self):
-        """Calculate LJ non-dimensional units.
+        r"""Calculate LJ non-dimensional units.
         Distances, energies, and masses are normalized by
         the $\sigma$, $\epsilon$, and $m$ parameters from the
         first type of atom.
         In addition:
         - Times are normalized by $\sqrt{m \sigma^2 / \epsilon}$.
-        - Temperature are normalized by $\epsilon/k_\text{B}$, 
+        - Temperature are normalized by $\epsilon/k_\text{B}$,
           where $k_\text{B}$ is the Boltzmann constant.
         - Pressures are normalized by $\epsilon/\sigma^3$.
         """
         # Distance, energie, and mass
-        self.reference_distance = self.sigma[0] # Angstrom
-        self.reference_energy = self.epsilon[0] # Kcal/mol
-        self.reference_mass = self.atom_mass[0] # g/mol
+        self.reference_distance = self.sigma[0]  # Angstrom
+        self.reference_energy = self.epsilon[0]  # Kcal/mol
+        self.reference_mass = self.atom_mass[0]  # g/mol
         # Time
-        mass_kg = self.atom_mass[0]/cst.kilo/cst.Avogadro # kg
-        epsilon_J = self.epsilon[0]*cst.calorie*cst.kilo/cst.Avogadro # J
-        sigma_m = self.sigma[0]*cst.angstrom # m
-        time_s = np.sqrt(mass_kg*sigma_m**2/epsilon_J) # s
-        self.reference_time = time_s / cst.femto # fs
+        mass_kg = self.atom_mass[0]/cst.kilo/cst.Avogadro  # kg
+        epsilon_J = self.epsilon[0]*cst.calorie*cst.kilo/cst.Avogadro  # J
+        sigma_m = self.sigma[0]*cst.angstrom  # m
+        time_s = np.sqrt(mass_kg*sigma_m**2/epsilon_J)  # s
+        self.reference_time = time_s / cst.femto  # fs
         # Pressure
-        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
-        self.reference_temperature = self.epsilon[0]/kB # K
-        pressure_pa = epsilon_J/sigma_m**3 # Pa
-        self.reference_pressure = pressure_pa/cst.atm # atm
-
+        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo  # kCal/mol/K
+        self.reference_temperature = self.epsilon[0]/kB  # K
+        pressure_pa = epsilon_J/sigma_m**3  # Pa
+        self.reference_pressure = pressure_pa/cst.atm  # atm
