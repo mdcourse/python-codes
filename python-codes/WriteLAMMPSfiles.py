@@ -4,7 +4,11 @@ import numpy as np
 def write_topology_file(dictionary,
                         filename="lammps.data",
                         velocities=None):
-    """Write a LAMMPS data file containing atoms positions and velocities"""
+    """Write a LAMMPS data file containing atoms positions and velocities.
+
+    The charge of the atoms is assumed to be 0, and the same
+    molecule id is used for all atoms.
+    """
     atoms_types = dictionary.atoms_type
     atoms_positions = dictionary.atoms_positions\
         * dictionary.reference_distance
@@ -25,8 +29,7 @@ def write_topology_file(dictionary,
     f.write('\nAtoms\n\n')
     cpt = 1
     for type, xyz in zip(atoms_types, atoms_positions):
-        q = 0
-        mol = 1
+        q, mol = 0, 1
         characters = "%d %d %d %.3f %.3f %.3f %.3f %s"
         v = [cpt, mol, type, q, xyz[0], xyz[1], xyz[2]]
         f.write(characters % (v[0], v[1], v[2], v[3], v[4], v[5], v[6], '\n'))
