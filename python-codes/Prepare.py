@@ -12,17 +12,14 @@ class Prepare:
                  sigma=[1],  # List - Angstrom
                  atom_mass=[1],  # List - g/mol
                  *args,
-                 **kwargs,
-                 ):
-        super().__init__(*args, **kwargs)
-
+                 **kwargs):
         self.number_atoms = number_atoms
         self.epsilon = epsilon
         self.sigma = sigma
         self.atom_mass = atom_mass
-
-        self.nondimensionalize_units_0()
+        super().__init__(*args, **kwargs)
         self.calculate_LJunits_prefactors()
+        self.nondimensionalize_units_0()
         self.calculate_cross_coefficients()
 
     def nondimensionalize_units_0(self):
@@ -44,8 +41,10 @@ class Prepare:
         atoms_epsilon = []
         atoms_mass = []
         atoms_type = []
-        for parts in zip(self.sigma, self.epsilon,
-                         self.atom_mass, self.number_atoms,
+        for parts in zip(self.sigma,
+                         self.epsilon,
+                         self.atom_mass,
+                         self.number_atoms,
                          np.arange(len(self.number_atoms))+1):
             sigma, epsilon, mass, number_atoms, type = parts
             atoms_sigma += [sigma] * number_atoms
