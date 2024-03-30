@@ -1,3 +1,4 @@
+from scipy import constants as cst
 import numpy as np
 import os
 from Measurements import Measurements
@@ -38,28 +39,39 @@ class Outputs(Measurements):
                                     epot_kcalmol,
                                     max_force_kcalmolA))
 
-    def update_log_md_mc(self):
+    def update_log_md_mc(self, velocity=True):
         """Update the log file during MD or MC simulations"""
         if self.thermo_period is not None:
             if (self.step % self.thermo_period == 0) \
                     | (self.thermo_period == 0):
                 # refresh values
-                self.calculate_temperature()
-                self.calculate_pressure()
-                self.calculate_kinetic_energy()
+                if velocity:
+                    self.calculate_temperature()
+                    self.calculate_kinetic_energy()
+                    self.calculate_pressure()
                 # convert the units
-                temperature_K = self.temperature * self.reference_temperature
-                pressure_atm = self.pressure * self.reference_pressure
-                volume_A3 = np.prod(self.box_size)*self.reference_distance**3
-                epot_kcalmol = self.calculate_LJ_potential_force(
-                    output="potential") * self.reference_energy
-                ekin_kcalmol = self.Ekin*self.reference_energy
-                density_gmolA3 = self.calculate_density()\
-                    * self.reference_mass/self.reference_distance**3
-                density_gcm3 = density_gmolA3/6.022e23*(1e8)**3
+                if velocity:
+                    temperature = self.temperature \
+                        * self.reference_temperature  # K
+                    pressure = self.pressure \
+                        * self.reference_pressure  # Atm
+                    Ekin = self.Ekin*self.reference_energy  # kcal/mol
+                else:
+                    temperature = self.desired_temperature \
+                        * self.reference_temperature  # K
+                    pressure = 0.0
+                    Ekin = 0.0
+                volume = np.prod(self.box_size[:3]) \
+                    *self.reference_distance**3  # A3
+                Epot = self.compute_potential(output="potential") \
+                    * self.reference_energy  # kcal/mol
+                density = self.calculate_density()  # Unitless
+                density *= self.reference_mass \
+                    /self.reference_distance**3  # g/mol/A3
+                Na = cst.Avogadro
+                density *= (cst.centi/cst.angstrom)**3 / Na  # g/cm3
                 if self.step == 0:
-                    characters = '{:<5} {:<5} {:<9} {:<9} {:<9} \
-                        {:<13} {:<13} {:<13}'
+                    characters = '{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'
                     print(characters.format(
                         '%s' % ("step"),
                         '%s' % ("N"),
@@ -70,25 +82,24 @@ class Outputs(Measurements):
                         '%s' % ("Ek (kcal/mol)"),
                         '%s' % ("dens (g/cm3)"),
                         ))
-                characters = '{:<5} {:<5} {:<9} {:<9} \
-                    {:<9} {:<13} {:<13} {:<13}'
+                characters = '{:<5} {:<5} {:<9} {:<9} {:<9} {:<13} {:<13} {:<13}'
                 print(characters.format(
                     '%s' % (self.step),
                     '%s' % (self.total_number_atoms),
-                    '%s' % (f"{temperature_K:.3}"),
-                    '%s' % (f"{pressure_atm:.3}"),
-                    '%s' % (f"{volume_A3:.3}"),
-                    '%s' % (f"{epot_kcalmol:.3}"),
-                    '%s' % (f"{ekin_kcalmol:.3}"),
-                    '%s' % (f"{density_gcm3:.3}"),
+                    '%s' % (f"{temperature:.3}"),
+                    '%s' % (f"{pressure:.3}"),
+                    '%s' % (f"{volume:.3}"),
+                    '%s' % (f"{Epot:.3}"),
+                    '%s' % (f"{Ekin:.3}"),
+                    '%s' % (f"{density:.3}"),
                     ))
                 for output_value, filename in zip([self.total_number_atoms,
-                                                   epot_kcalmol,
-                                                   ekin_kcalmol,
-                                                   pressure_atm,
-                                                   temperature_K,
-                                                   density_gcm3,
-                                                   volume_A3],
+                                                   Epot,
+                                                   Ekin,
+                                                   pressure,
+                                                   temperature,
+                                                   density,
+                                                   volume],
                                                   ["atom_number.dat",
                                                    "Epot.dat",
                                                    "Ekin.dat",

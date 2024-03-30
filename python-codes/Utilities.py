@@ -31,9 +31,9 @@ class Utilities:
 
     def calculate_density(self):
         """Calculate the mass density."""
-        volume = np.prod(self.box_size)
-        total_mass = np.sum(self.atoms_mass)
-        return total_mass/volume
+        volume = np.prod(self.box_size[:3])  # Unitless
+        total_mass = np.sum(self.atoms_mass)  # Unitless
+        return total_mass/volume  # Unitless
 
     def calculate_pressure(self):
         """Evaluate p based on the Virial equation (Eq. 4.4.2 in Frenkel-Smith 2002)"""
@@ -108,10 +108,14 @@ class Utilities:
     def wrap_in_box(self):
         """Re-wrap the atoms that are outside the box."""
         for dim in np.arange(self.dimensions):
-            out_ids = self.atoms_positions[:, dim] > self.box_boundaries[dim][1]
-            self.atoms_positions[:, dim][out_ids] -= np.diff(self.box_boundaries[dim])[0]
-            out_ids = self.atoms_positions[:, dim] < self.box_boundaries[dim][0]
-            self.atoms_positions[:, dim][out_ids] += np.diff(self.box_boundaries[dim])[0]
+            out_ids = self.atoms_positions[:, dim] \
+                > self.box_boundaries[dim][1]
+            self.atoms_positions[:, dim][out_ids] \
+                -= np.diff(self.box_boundaries[dim])[0]
+            out_ids = self.atoms_positions[:, dim] \
+                < self.box_boundaries[dim][0]
+            self.atoms_positions[:, dim][out_ids] \
+                += np.diff(self.box_boundaries[dim])[0]
 
     def update_neighbor_lists(self):
         """Update the neighbor lists."""
