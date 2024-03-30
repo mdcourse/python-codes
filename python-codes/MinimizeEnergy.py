@@ -31,22 +31,21 @@ class MinimizeEnergy(Outputs):
         for self.step in range(0, self.maximum_steps+1):
             # Measure the initial energy and max force
             self.update_neighbor_lists()
-            initial_Epot = self.calculate_LJ_potential_force(
-                output="potential")
+            init_Epot = self.compute_potential(output="potential")
             initial_positions = copy.deepcopy(self.atoms_positions)
-            forces = self.calculate_LJ_potential_force(output="force-vector")
+            forces = self.compute_potential(output="force-vector")
             max_forces = np.max(np.abs(forces))
             # Test a new sets of positions
             self.atoms_positions = self.atoms_positions \
                 + forces/max_forces*self.displacement
-            trial_Epot = self.calculate_LJ_potential_force(output="potential")
+            trial_Epot = self.compute_potential(output="potential")
             # Keep the more favorable energy
-            if trial_Epot < initial_Epot:  # accept new position
+            if trial_Epot < init_Epot:  # accept new position
                 Epot = trial_Epot
                 self.wrap_in_box()
                 self.displacement *= 1.2
             else:  # reject new position
-                Epot = initial_Epot
+                Epot = init_Epot
                 self.atoms_positions = initial_positions
                 self.displacement *= 0.2
             self.update_log_minimize(Epot, max_forces)
