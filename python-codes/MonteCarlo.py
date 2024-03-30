@@ -89,6 +89,7 @@ class MonteCarlo(Outputs):
             initial_Epot = self.compute_potential(output="potential")
             initial_positions = copy.deepcopy(self.atoms_positions)
             initial_number_atoms = copy.deepcopy(self.number_atoms)
+            initial_neighbor_lists = copy.deepcopy(self.neighbor_lists)
             volume = np.prod(np.diff(self.box_boundaries))
             if np.random.random() < 0.5:
                 # Try adding an atom
@@ -126,6 +127,7 @@ class MonteCarlo(Outputs):
                 pass
             else:
                 # Reject the new position
+                self.neighbor_lists = initial_neighbor_lists
                 self.atoms_positions = initial_positions
                 self.number_atoms = initial_number_atoms
                 self.calculate_cross_coefficients()
