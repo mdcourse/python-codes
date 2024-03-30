@@ -10,6 +10,8 @@ def write_topology_file(dictionary,
     The charge of the atoms is assumed to be 0, and the same
     molecule id is used for all atoms.
     """
+    box_boundaries = dictionary.box_boundaries\
+        * dictionary.reference_distance
     atoms_types = dictionary.atoms_type
     atoms_positions = dictionary.atoms_positions\
         * dictionary.reference_distance
@@ -20,13 +22,9 @@ def write_topology_file(dictionary,
     f.write('# LAMMPS data file\n\n')
     f.write("%d %s" % (dictionary.total_number_atoms, 'atoms\n'))
     f.write("%d %s" % (np.max(dictionary.atoms_type), 'atom types\n\n'))
-    for LminLmax, dim in zip(dictionary.box_boundaries
-                             * dictionary.reference_distance,
-                             ["x", "y", "z"]):
-        f.write("%.3f %.3f %s %s" % (LminLmax[0],
-                                     LminLmax[1],
-                                     dim+'lo',
-                                     dim+'hi\n'))
+    for l0, dim in zip(box_boundaries, ["x", "y", "z"]):
+        characters = "%.3f %.3f %s %s"
+        f.write(characters % (l0[0], l0[1], dim+'lo', dim+'hi\n'))
     f.write('\nAtoms\n\n')
     cpt = 1
     for type, xyz in zip(atoms_types, atoms_positions):

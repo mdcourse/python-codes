@@ -89,15 +89,28 @@ class Outputs(Measurements):
 
     def update_data_file(self, output_value, filename):
         if self.step == 0:
-            myfile = open(self.data_folder + filename, "w")
+            f = open(self.data_folder + filename, "w")
         else:
-            myfile = open(self.data_folder + filename, "a")
-        myfile.write(str(self.step) + " " + str(output_value) + "\n")
-        myfile.close()
+            f = open(self.data_folder + filename, "a")
+        characters = "%d %.3f %s"
+        v = [self.step, output_value]
+        f.write(characters % (v[0], v[1], '\n'))
+        f.close()
 
-    def update_dump_file(self, filename, velocity = True):
-        if self.dump is not None:
-            if self.step % self.dump == 0:
+    def update_dump_file(self, filename, velocity = False):
+        """Update the dump file with the atom positions.
+        
+        If velocity is True, atom velocities are also printed in the file."""
+        if self.dumping_period is not None:
+            box_boundaries = self.box_boundaries\
+                * self.reference_distance
+            atoms_positions = self.atoms_positions\
+                * self.reference_distance
+            atoms_types = self.atoms_type
+            if velocity:
+                atoms_velocities = self.atoms_velocities \
+                    * self.reference_distance/self.reference_time 
+            if self.step % self.dumping_period == 0:
                 if self.step==0:
                     f = open(self.data_folder + filename, "w")
                 else:
@@ -108,23 +121,26 @@ class Outputs(Measurements):
                 f.write(str(self.total_number_atoms) + "\n")
                 f.write("ITEM: BOX BOUNDS pp pp pp\n")
                 for dim in np.arange(self.dimensions):
-                    f.write(str(self.box_boundaries[dim][0]*self.reference_distance)
-                            + " " + str(self.box_boundaries[dim][1]*self.reference_distance) + "\n")
-                f.write("ITEM: ATOMS id type x y z vx vy vz\n")
+                    f.write(str(box_boundaries[dim][0]) + " "
+                            + str(box_boundaries[dim][1]) + "\n")
                 cpt = 1
-                atoms_positions = copy.deepcopy(self.atoms_positions) * self.reference_distance
                 if velocity:
-                    atoms_velocities = copy.deepcopy(self.atoms_velocities) \
-                        * self.reference_distance/self.reference_time 
+                    f.write("ITEM: ATOMS id type x y z vx vy vz\n")
+                    characters = "%d %d %.3f %.3f %.3f %.3f %.3f %.3f %s"
+                    for type, xyz, vxyz in zip(atoms_types,
+                                               atoms_positions,
+                                               atoms_velocities):
+                        v = [cpt, type, xyz[0], xyz[1], xyz[2],
+                             vxyz[0], vxyz[1], vxyz[2]]
+                        f.write(characters % (v[0], v[1], v[2], v[3], v[4],
+                                              v[5], v[6], v[7], '\n'))
+                        cpt += 1
                 else:
-                    atoms_velocities = np.zeros((self.total_number_atoms, self.dimensions))
-                for type, xyz, vxyz in zip(self.atoms_type, atoms_positions, atoms_velocities):
-                    f.write(str(cpt) + " " + str(type)
-                            + " " + str(np.round(xyz[0],3))
-                            + " " + str(np.round(xyz[1],3))
-                            + " " + str(np.round(xyz[2],3))
-                            + " " + str(vxyz[0])
-                            + " " + str(vxyz[1])
-                            + " " + str(vxyz[2])+"\n") 
-                    cpt += 1
+                    f.write("ITEM: ATOMS id type x y z\n")
+                    characters = "%d %d %.3f %.3f %.3f %s"
+                    for type, xyz in zip(atoms_types,
+                                         atoms_positions):
+                        v = [cpt, type, xyz[0], xyz[1], xyz[2]]
+                        f.write(characters % (v[0], v[1], v[2], v[3], v[4], '\n'))
+                        cpt += 1
                 f.close()
