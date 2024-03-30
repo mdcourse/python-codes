@@ -1,7 +1,5 @@
-from scipy import constants as cst
 import numpy as np
 import copy, os
-
 from Measurements import Measurements
 
 import warnings
@@ -9,30 +7,34 @@ warnings.filterwarnings('ignore')
 
 class Outputs(Measurements):
     def __init__(self,
-                 thermo = None,
-                 dump = None,
+                 thermo_period = None,
+                 dumping_period = None,
                  data_folder = "Outputs/",
                  *args,
                  **kwargs):
-        self.thermo = thermo
-        self.dump = dump
+        self.thermo_period = thermo_period
+        self.dumping_period = dumping_period
         self.data_folder = data_folder
         super().__init__(*args, **kwargs)
-
         if os.path.exists(self.data_folder) is False:
             os.mkdir(self.data_folder)
 
-    def log_minimize(self, Epot, maxForce):
-        if (self.thermo is not None) & ((self.step % self.thermo == 0) | (self.step == 0)):
-            epot_kcalmol = Epot * self.reference_energy
-            max_force_kcalmolA = maxForce * self.reference_energy / self.reference_distance
-            if self.step == 0:
-                print("%s %s %s"%("step", "epot", "maxF")) 
-            print("%d %.3f %.3f"%(self.step, epot_kcalmol, max_force_kcalmolA)) 
+    def update_log_minimize(self, Epot, maxForce):
+        """Update the log file during minimization"""
+        if (self.thermo_period is not None):
+            if ((self.step % self.thermo_period == 0) \
+                | (self.thermo_period == 0)):
+                epot_kcalmol = Epot * self.reference_energy
+                max_force_kcalmolA = maxForce * self.reference_energy / self.reference_distance
+                if self.step == 0:
+                    print("%s %s %s"%("step", "epot", "maxF")) 
+                print("%d %.3f %.3f"%(self.step, epot_kcalmol, max_force_kcalmolA)) 
 
-    def update_log(self):
-        if self.thermo is not None:
-            if (self.step % self.thermo == 0) | (self.step == 0):
+    def update_log_md_mc(self):
+        """Update the log file during MD or MC simulations"""
+        if self.thermo_period is not None:
+            if (self.step % self.thermo_period == 0) \
+                | (self.thermo_period == 0):
                 # refresh values
                 self.calculate_temperature()
                 self.calculate_pressure()
@@ -83,9 +85,9 @@ class Outputs(Measurements):
                                                     "temperature.dat",
                                                     "density.dat",
                                                     "volume.dat"]):
-                    self.write_data_file(output_value, filename)
+                    self.update_data_file(output_value, filename)
 
-    def write_data_file(self, output_value, filename):
+    def update_data_file(self, output_value, filename):
         if self.step == 0:
             myfile = open(self.data_folder + filename, "w")
         else:
@@ -93,7 +95,7 @@ class Outputs(Measurements):
         myfile.write(str(self.step) + " " + str(output_value) + "\n")
         myfile.close()
 
-    def update_dump(self, filename, velocity = True):
+    def update_dump_file(self, filename, velocity = True):
         if self.dump is not None:
             if self.step % self.dump == 0:
                 if self.step==0:
@@ -126,45 +128,3 @@ class Outputs(Measurements):
                             + " " + str(vxyz[2])+"\n") 
                     cpt += 1
                 f.close()
-
-
-    def write_lammps_parameters(self, filename="PARM.lammps"):
-        """Write a LAMMPS-format parameters file"""
-        f = open(filename, "w")
-        f.write('# LAMMPS parameter file \n\n')
-        for type, mass in zip(np.unique(self.atoms_type), self.atom_mass):
-            mass *= self.reference_mass
-            f.write("mass "+str(type)+" "+str(mass)+"\n")  
-        f.write('\n')   
-        for type, epsilon, sigma in zip(np.unique(self.atoms_type),
-                                        self.epsilon,
-                                        self.sigma):
-            epsilon *= self.reference_energy
-            sigma *= self.reference_distance
-            f.write("pair_coeff "+str(type)+" "+str(type)+" "+
-                    str(epsilon) + " " + str(sigma) + "\n")
-        f.write('\n')
-        f.close()
-
-    def write_lammps_variables(self, filename="variable.lammps"):
-        """Write a LAMMPS-format variable file"""
-        f = open(filename, "w")
-        f.write('# LAMMPS variable file \n\n')
-        f.write('variable thermo equal ' + str(self.thermo) + '\n')
-        f.write('variable dump equal ' + str(self.dump) + '\n')
-        # f.write('variable thermo_minimize equal ' + str(self.thermo_minimize) + '\n')
-        # f.write('variable dumping_minimize equal ' + str(self.dumping_minimize) + '\n')
-        f.write('variable time_step equal ' + str(self.time_step*self.reference_time) + '\n')
-        # f.write('variable minimization_steps equal ' + str(self.minimization_steps) + '\n')
-        f.write('variable maximum_steps equal ' + str(self.maximum_steps) + '\n')
-        kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo # kCal/mol/K
-        f.write('variable temp equal ' + str(self.desired_temperature*self.reference_energy/kB) + '\n')
-        f.write('variable tau_temp equal ' + str(self.tau_temp*self.reference_time) + '\n')
-        if self.tau_press is not None:
-            f.write('variable press equal ' + str(self.desired_pressure * self.reference_pressure) + '\n')
-            f.write('variable tau_press equal ' + str(self.tau_press*self.reference_time) + '\n')
-            f.write('variable pber equal 1')
-        else:
-            f.write('variable pber equal 0')     
-        f.write('\n')
-        f.close()

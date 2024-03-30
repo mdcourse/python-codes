@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import constants as cst
 
 
 def write_topology_file(dictionary,
@@ -42,4 +43,60 @@ def write_topology_file(dictionary,
             v = [cpt, vxyz[0], vxyz[1], vxyz[2]]
             f.write(characters % (cpt, v[0], v[1], v[2], '\n'))
             cpt += 1
+    f.close()
+
+
+def write_lammps_parameters(dictionary,
+                            filename="PARM.lammps"):
+    """Write a LAMMPS-format parameter file"""
+    f = open(filename, "w")
+    f.write('# LAMMPS parameter file \n\n')
+    for type, mass in zip(np.unique(dictionary.atoms_type),
+                          dictionary.atom_mass):
+        mass *= dictionary.reference_mass
+        f.write("mass "+str(type)+" "+str(mass)+"\n")
+    f.write('\n')
+    for type, epsilon, sigma in zip(np.unique(dictionary.atoms_type),
+                                    dictionary.epsilon,
+                                    dictionary.sigma):
+        epsilon *= dictionary.reference_energy
+        sigma *= dictionary.reference_distance
+        f.write("pair_coeff " + str(type) + " " + str(type) + " " +
+                str(epsilon) + " " + str(sigma) + "\n")
+    f.write('\n')
+    f.close()
+
+
+def write_lammps_variables(self, filename="variable.lammps"):
+    """Write a LAMMPS-format variable file"""
+    f = open(filename, "w")
+    f.write('# LAMMPS variable file \n\n')
+    f.write('variable thermo equal '
+            + str(self.thermo) + '\n')
+    f.write('variable dump equal '
+            + str(self.dump) + '\n')
+    # f.write('variable thermo_minimize equal '
+    # + str(self.thermo_minimize) + '\n')
+    # f.write('variable dumping_minimize equal '
+    # + str(self.dumping_minimize) + '\n')
+    f.write('variable time_step equal '
+            + str(self.time_step*self.reference_time) + '\n')
+    # f.write('variable minimization_steps equal '
+    # + str(self.minimization_steps) + '\n')
+    f.write('variable maximum_steps equal '
+            + str(self.maximum_steps) + '\n')
+    kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo  # kCal/mol/K
+    f.write('variable temp equal '
+            + str(self.desired_temperature*self.reference_energy/kB) + '\n')
+    f.write('variable tau_temp equal '
+            + str(self.tau_temp*self.reference_time) + '\n')
+    if self.tau_press is not None:
+        f.write('variable press equal '
+                + str(self.desired_pressure * self.reference_pressure) + '\n')
+        f.write('variable tau_press equal '
+                + str(self.tau_press*self.reference_time) + '\n')
+        f.write('variable pber equal 1')
+    else:
+        f.write('variable pber equal 0')
+    f.write('\n')
     f.close()
