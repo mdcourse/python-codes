@@ -10,5 +10,7 @@ python-codes/*.data
 
 benchmark/*/*.data
 
-./tests/*.data
-./tests/variable.lammps
+tests/*.data
+tests/variable.lammps
+
+automated-testing/generated-codes/*

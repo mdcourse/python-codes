@@ -6,7 +6,7 @@ warnings.filterwarnings('ignore')
 from InitializeSimulation import InitializeSimulation
 from Measurements import Measurements
 
-class MolecularDynamics(InitializeSimulation, Measurements):
+class MolecularDynamics(InitializeSimulation, Measurements): #to fix should be Outputs
     def __init__(self,
                 maximum_steps,
                 tau_temp = None,
