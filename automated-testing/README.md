@@ -1,2 +1,1 @@
-
-Here, the python script is automatically generated from the documentation, and the script is being tested.
+Python script is automatically generated from the documentation. Each Chapter can thus be tested.
