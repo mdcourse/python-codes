@@ -1,7 +1,5 @@
-from scipy import constants as cst
 import numpy as np
 
-import MDAnalysis as mda
 from MDAnalysis.analysis import distances
 from Potentials import LJ_potential
 
