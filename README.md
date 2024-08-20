@@ -8,5 +8,5 @@ This repository contains the Python code associated with the [Learn Molecular Si
 ## Automated testing
 
 Within the automated-testing/ folder, a code for automatingly testing the documentation
-is avalaible. The code read the documention, detect the Python code, write
+is avalaible. The code read the documentation, detect the Python code, write
 it to file, and then test it.
