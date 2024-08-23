@@ -15,7 +15,7 @@ class MonteCarlo(Outputs):
                  desired_mu = None,
                  inserted_type = 0,
                  desired_temperature = 300,
-                 neighbor = 10,
+                 neighbor = 1,
                  *args,
                  **kwargs):
         self.maximum_steps = maximum_steps
@@ -25,11 +25,7 @@ class MonteCarlo(Outputs):
         self.inserted_type = inserted_type
         self.desired_temperature = desired_temperature
         self.beta =  1/self.desired_temperature
-        if self.desired_mu is not None:
-            self.neighbor = 1
-        else:
-            # Rebuild neighbor lists every step in GCMC
-            self.neighbor = neighbor
+        self.neighbor = neighbor
         super().__init__(*args, **kwargs)
         self.nondimensionalize_units_3()
 
