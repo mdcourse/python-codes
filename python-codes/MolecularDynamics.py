@@ -3,10 +3,9 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
-from InitializeSimulation import InitializeSimulation
-from Measurements import Measurements
+from Outputs import Outputs
 
-class MolecularDynamics(InitializeSimulation, Measurements): #to fix should be Outputs
+class MolecularDynamics( Outputs):
     def __init__(self,
                 maximum_steps,
                 tau_temp = None,

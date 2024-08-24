@@ -12,3 +12,5 @@ benchmark/*/*.data
 
 tests/*.data
 tests/variable.lammps
+
+**/generated-codes/
