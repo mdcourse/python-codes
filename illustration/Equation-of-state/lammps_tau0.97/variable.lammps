@@ -1,0 +1,10 @@
+# LAMMPS variable file 
+
+variable neighbor equal 50
+variable thermo equal 5000
+variable dump equal 5000
+variable cut_off equal 8.512537251830942
+variable displace_mc equal 0.6810029801464753
+variable maximum_steps equal 200000
+variable temp equal 328.15
+

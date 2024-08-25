@@ -14,3 +14,7 @@ tests/*.data
 tests/variable.lammps
 
 **/generated-codes/
+
+!illustration/Equation-of-state/outputs_*/Epot.dat
+!illustration/Equation-of-state/lammps_*/Epot.dat
+
