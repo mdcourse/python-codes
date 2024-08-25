@@ -1,0 +1,42 @@
+# LAMMPS input file 
+
+include variable.lammps
+
+units real
+dimension 3
+atom_style atomic
+pair_style lj/cut ${cut_off}
+boundary p p p
+
+read_data initial.data
+include PARM.lammps
+
+neigh_modify every ${neighbor}
+
+velocity all create ${temp} 4928459
+fix mymc all gcmc 1 0 1 1 29494 ${temp} -0.5 ${displace_mc}
+
+thermo ${thermo}
+dump mydmp all custom ${dump} dump.lammpstrj id type x y z vx vy vz
+
+variable Ecoul equal ecoul
+variable Evdwl equal evdwl
+variable Epot equal pe
+variable Ekin equal ke
+variable Etot equal v_Epot+v_Ekin
+variable volume equal vol
+variable pressure equal press
+variable temperature equal temp
+variable mass equal mass(all)
+variable density equal v_mass/v_volume/6.022e23*(1e8)^3 # g/cm3
+fix myat1 all ave/time ${thermo} 1 ${thermo} v_Epot file Epot.dat
+fix myat2 all ave/time ${thermo} 1 ${thermo} v_Ekin file Ekin.dat
+fix myat3 all ave/time ${thermo} 1 ${thermo} v_Etot file Etot.dat
+fix myat4 all ave/time ${thermo} 1 ${thermo} v_Ecoul file Ecoul.dat
+fix myat5 all ave/time ${thermo} 1 ${thermo} v_Evdwl file Evdwl.dat
+fix myat6 all ave/time ${thermo} 1 ${thermo} v_pressure file pressure.dat
+fix myat7 all ave/time ${thermo} 1 ${thermo} v_temperature file temperature.dat
+fix myat8 all ave/time ${thermo} 1 ${thermo} v_volume file volume.dat
+fix myat9 all ave/time ${thermo} 1 ${thermo} v_density file density.dat
+
+run ${maximum_steps}
