@@ -21,5 +21,5 @@ if os.path.exists("generated-codes/") is False:
 
 # Choose a desired chapter id to build the code from
 # max_chapter_id = 6
-for chapter_id in [1, 2, 3, 4, 5, 6]:
+for chapter_id in [1, 2, 3, 4, 5, 6, 7]:
     RST_EXISTS, created_tests, folder = sphinx_to_python(path_to_docs, chapter_id)
