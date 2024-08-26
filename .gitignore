@@ -20,4 +20,4 @@ tests/variable.lammps
 !illustration/Equation-of-state/outputs_*/press*.dat
 !illustration/Equation-of-state/lammps_*/press*.dat
 
-
+**/_*
