@@ -1,93 +1,68 @@
 import numpy as np
-
 from MDAnalysis.analysis import distances
-from Potentials import LJ_potential
 
-import warnings
-warnings.filterwarnings('ignore')
+
+from potentials import LJ_potential
+
 
 class Utilities:
     def __init__(self,
-                 *args,
-                 **kwargs):
+                *args,
+                **kwargs):
         super().__init__(*args, **kwargs)
 
-    def calculate_kinetic_energy(self):
-        """Calculate the kinetic energy based on the velocities of the atoms.
-        $Ekin = \sum_{i=1}^Natom 1/2 m_i v_i^2$
-        """
-        self.Ekin = np.sum(self.atoms_mass*(self.atoms_velocities.T)**2)/2 # tofix atoms of different masses
 
-    def calculate_temperature(self):
-        """ Follow the expression given in the LAMMPS documentation
-        $Ndof = Ndim * Natom - Ndim$
-        $T(t) = \sum_{i=1}^Natom \dfrac{m_i v_i^2 (t)}{k_\text{B} Ndof}$
-        """
-        self.calculate_kinetic_energy()
-        Ndof = self.dimensions*self.total_number_atoms-self.dimensions
-        self.temperature = 2*self.Ekin/Ndof
+    def update_neighbor_lists(self):
+        if (self.step % self.neighbor == 0):
+            matrix = distances.contact_matrix(self.atoms_positions,
+                cutoff=self.cut_off, #+2,
+                returntype="numpy",
+                box=self.box_size)
+            neighbor_lists = []
+            for cpt, array in enumerate(matrix[:-1]):
+                list = np.where(array)[0].tolist()
+                list = [ele for ele in list if ele > cpt]
+                neighbor_lists.append(list)
+            self.neighbor_lists = neighbor_lists
 
-    def calculate_density(self):
-        """Calculate the mass density."""
-        volume = np.prod(self.box_size[:3])  # Unitless
-        total_mass = np.sum(self.atoms_mass)  # Unitless
-        return total_mass/volume  # Unitless
-
-    def calculate_pressure(self):
-        """Evaluate p based on the Virial equation (Eq. 4.4.2 in Frenkel-Smith 2002)"""
-        Ndof = self.dimensions*self.total_number_atoms-self.dimensions    
-        volume = np.prod(self.box_size)
-        self.calculate_temperature()
-        p_ideal = (Ndof/self.dimensions)*self.temperature/volume
-        p_non_ideal = 1/(volume*self.dimensions)*np.sum(self.compute_potential(output="force-matrix")*self.evaluate_rij_matrix())
-        self.pressure = (p_ideal+p_non_ideal)
-
-    def evaluate_rij_matrix(self):
-        """Matrix of vectors between all particles."""
-        rij_matrix = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
-        for Ni in range(self.total_number_atoms-1):
-            position_i = self.atoms_positions[Ni]
-            positions_j = self.atoms_positions
-            rij_xyz = (np.remainder(position_i - positions_j
-                                    + self.box_size[:3]/2., self.box_size[:3])
-                                    - self.box_size[:3]/2.)
-            rij_matrix[Ni] = rij_xyz
-        return rij_matrix
-
-    def calculate_r(self, position_i, positions_j):
-        """Calculate the shortest distance between position_i and positions_j.
-        # to fix : use the MDAnalysis option
-        """
-        rij = (np.remainder(position_i - positions_j
-                            + self.box_size[:3]/2., self.box_size[:3])
-                            - self.box_size[:3]/2.)
-        return np.linalg.norm(rij, axis=1)
+    def update_cross_coefficients(self):
+        if (self.step % self.neighbor == 0):
+            # Precalculte LJ cross-coefficients
+            sigma_ij_list = []
+            epsilon_ij_list = []
+            for Ni in np.arange(self.total_number_atoms-1): # tofix error for GCMC
+                # Read information about atom i
+                sigma_i = self.atoms_sigma[Ni]
+                epsilon_i = self.atoms_epsilon[Ni]
+                neighbor_of_i = self.neighbor_lists[Ni]
+                # Read information about neighbors j
+                sigma_j = self.atoms_sigma[neighbor_of_i]
+                epsilon_j = self.atoms_epsilon[neighbor_of_i]
+                # Calculare cross parameters
+                sigma_ij_list.append((sigma_i+sigma_j)/2)
+                epsilon_ij_list.append((epsilon_i+epsilon_j)/2)
+            self.sigma_ij_list = sigma_ij_list
+            self.epsilon_ij_list = epsilon_ij_list
 
     def compute_potential(self, output):
-        """Calculate potential and force from Lennard-Jones potential."""
-        # to fix : wont work for insert/delete ... 
         if output == "force-vector":
             forces = np.zeros((self.total_number_atoms,3))
         elif output == "force-matrix":
             forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
         energy_potential = 0
+        box_size = self.box_size[:3]
+        half_box_size = self.box_size[:3]/2.0
         for Ni in np.arange(self.total_number_atoms-1):
             # Read information about atom i
             position_i = self.atoms_positions[Ni]
-            sigma_i = self.atoms_sigma[Ni]
-            epsilon_i = self.atoms_epsilon[Ni]
             neighbor_of_i = self.neighbor_lists[Ni]
-            # Read information about neighbors j
+            # Read information about neighbors j and cross coefficient
             positions_j = self.atoms_positions[neighbor_of_i]
-            sigma_j = self.atoms_sigma[neighbor_of_i]
-            epsilon_j = self.atoms_epsilon[neighbor_of_i]
-            # Measure distances and other cross parameters
-            rij_xyz = (np.remainder(position_i - positions_j
-                                    + self.box_size[:3]/2., self.box_size[:3])
-                                    - self.box_size[:3]/2.)
+            sigma_ij = self.sigma_ij_list[Ni]
+            epsilon_ij = self.epsilon_ij_list[Ni]
+            # Measure distances
+            rij_xyz = (np.remainder(position_i - positions_j + half_box_size, box_size) - half_box_size)
             rij = np.linalg.norm(rij_xyz, axis=1)
-            sigma_ij = (sigma_i+sigma_j)/2
-            epsilon_ij = (epsilon_i+epsilon_j)/2
             # Measure potential
             if output == "potential":
                 energy_potential += np.sum(LJ_potential(epsilon_ij, sigma_ij, rij))
@@ -102,9 +77,8 @@ class Utilities:
             return energy_potential
         elif (output == "force-vector") | (output == "force-matrix"):
             return forces
-    
+
     def wrap_in_box(self):
-        """Re-wrap the atoms that are outside the box."""
         for dim in np.arange(self.dimensions):
             out_ids = self.atoms_positions[:, dim] \
                 > self.box_boundaries[dim][1]
@@ -115,28 +89,38 @@ class Utilities:
             self.atoms_positions[:, dim][out_ids] \
                 += np.diff(self.box_boundaries[dim])[0]
 
-    def update_neighbor_lists(self):
-        """Update the neighbor lists."""
-        if (self.step % self.neighbor == 0):
+    def calculate_density(self):
+        """Calculate the mass density."""
+        volume = np.prod(self.box_size[:3])  # Unitless
+        total_mass = np.sum(self.atoms_mass)  # Unitless
+        return total_mass/volume  # Unitless
 
-            matrix = distances.contact_matrix(self.atoms_positions,
-                cutoff=self.cut_off, #+2,
-                returntype="numpy",
-                box=self.box_size)
+    def calculate_pressure(self):
+        """Evaluate p based on the Virial equation (Eq. 4.4.2 in Frenkel-Smit,
+        Understanding molecular simulation: from algorithms to applications, 2002)"""
+        # Ideal contribution
+        Ndof = self.dimensions*self.total_number_atoms-self.dimensions    
+        volume = np.prod(self.box_size[:3])
+        try:
+            self.calculate_temperature() # this is for later on, when velocities are computed
+            temperature = self.temperature
+        except:
+            temperature = self.desired_temperature # for MC, simply use the desired temperature
+        p_ideal = Ndof*temperature/(volume*self.dimensions)
+        # Non-ideal contribution
+        distances_forces = np.sum(self.compute_potential(output="force-matrix")*self.evaluate_rij_matrix())
+        p_nonideal = distances_forces/(volume*self.dimensions)
+        # Final pressure
+        self.pressure = p_ideal+p_nonideal
 
-            cpt = 0
-            neighbor_lists = []
-            for array in matrix[:-1]:
-                list = np.where(array)[0].tolist()
-                list = [ele for ele in list if ele > cpt]
-                cpt += 1
-                neighbor_lists.append(list)
-
-            self.neighbor_lists = neighbor_lists
-
-    def set_initial_velocity(self):
-        """Give velocity to atoms so that the initial temperature is the desired one."""
-        self.atoms_velocities = np.random.normal(size=(self.total_number_atoms, self.dimensions))
-        self.calculate_temperature()
-        scale = np.sqrt(1+((self.desired_temperature/self.temperature)-1))
-        self.atoms_velocities *= scale
+    def evaluate_rij_matrix(self):
+        """Matrix of vectors between all particles."""
+        box_size = self.box_size[:3]
+        half_box_size = self.box_size[:3]/2.0
+        rij_matrix = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+        positions_j = self.atoms_positions
+        for Ni in range(self.total_number_atoms-1):
+            position_i = self.atoms_positions[Ni]
+            rij_xyz = (np.remainder(position_i - positions_j + half_box_size, box_size) - half_box_size)
+            rij_matrix[Ni] = rij_xyz
+        return rij_matrix
