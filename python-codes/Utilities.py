@@ -2,7 +2,7 @@ import numpy as np
 from MDAnalysis.analysis import distances
 
 
-from potentials import LJ_potential
+from potentials import potentials
 
 
 class Utilities:
@@ -12,8 +12,8 @@ class Utilities:
         super().__init__(*args, **kwargs)
 
 
-    def update_neighbor_lists(self):
-        if (self.step % self.neighbor == 0):
+    def update_neighbor_lists(self, force_update=False):
+        if (self.step % self.neighbor == 0) | force_update:
             matrix = distances.contact_matrix(self.atoms_positions,
                 cutoff=self.cut_off, #+2,
                 returntype="numpy",
@@ -25,12 +25,12 @@ class Utilities:
                 neighbor_lists.append(list)
             self.neighbor_lists = neighbor_lists
 
-    def update_cross_coefficients(self):
-        if (self.step % self.neighbor == 0):
+    def update_cross_coefficients(self, force_update=False):
+        if (self.step % self.neighbor == 0) | force_update:
             # Precalculte LJ cross-coefficients
             sigma_ij_list = []
             epsilon_ij_list = []
-            for Ni in np.arange(self.total_number_atoms-1): # tofix error for GCMC
+            for Ni in np.arange(np.sum(self.number_atoms)-1): # tofix error for GCMC
                 # Read information about atom i
                 sigma_i = self.atoms_sigma[Ni]
                 epsilon_i = self.atoms_epsilon[Ni]
@@ -44,42 +44,65 @@ class Utilities:
             self.sigma_ij_list = sigma_ij_list
             self.epsilon_ij_list = epsilon_ij_list
 
-    def compute_potential(self, output):
-        if output == "force-vector":
-            forces = np.zeros((self.total_number_atoms,3))
-        elif output == "force-matrix":
-            forces = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
+    def compute_potential(self):
+        """Compute the potential energy by summing up all pair contributions."""
         energy_potential = 0
-        box_size = self.box_size[:3]
-        half_box_size = self.box_size[:3]/2.0
-        for Ni in np.arange(self.total_number_atoms-1):
-            # Read information about atom i
-            position_i = self.atoms_positions[Ni]
+        for Ni in np.arange(np.sum(self.number_atoms)-1):
+            # Read neighbor list
             neighbor_of_i = self.neighbor_lists[Ni]
-            # Read information about neighbors j and cross coefficient
-            positions_j = self.atoms_positions[neighbor_of_i]
+            # Measure distance
+            rij = self.compute_distance(self.atoms_positions[Ni],
+                                        self.atoms_positions[neighbor_of_i],
+                                        self.box_size)
+            # Measure potential using pre-calculated cross coefficients
             sigma_ij = self.sigma_ij_list[Ni]
             epsilon_ij = self.epsilon_ij_list[Ni]
-            # Measure distances
-            rij_xyz = (np.remainder(position_i - positions_j + half_box_size, box_size) - half_box_size)
-            rij = np.linalg.norm(rij_xyz, axis=1)
-            # Measure potential
-            if output == "potential":
-                energy_potential += np.sum(LJ_potential(epsilon_ij, sigma_ij, rij))
+            energy_potential += np.sum(potentials(epsilon_ij, sigma_ij, rij))
+        return energy_potential
+
+    def compute_distance(self,position_i, positions_j, box_size, only_norm = True):
+        """
+        Measure the distances between two particles.
+        # TOFIX: Move as a function instead of a method?
+        """
+        rij_xyz = np.nan_to_num(np.remainder(position_i - positions_j
+                  + box_size[:3]/2.0, box_size[:3]) - box_size[:3]/2.0)
+        if only_norm:
+            return np.linalg.norm(rij_xyz, axis=1)
+        else:
+            return np.linalg.norm(rij_xyz, axis=1), rij_xyz
+
+    def compute_force(self, return_vector = True):
+        if return_vector: # return a N-size vector
+            force_vector = np.zeros((np.sum(self.number_atoms),3))
+        else: # return a N x N matrix
+            force_matrix = np.zeros((np.sum(self.number_atoms),
+                                    np.sum(self.number_atoms),3))
+        for Ni in np.arange(np.sum(self.number_atoms)-1):
+            # Read neighbor list
+            neighbor_of_i = self.neighbor_lists[Ni]
+            # Measure distance
+            rij, rij_xyz = self.compute_distance(self.atoms_positions[Ni],
+                                        self.atoms_positions[neighbor_of_i],
+                                        self.box_size, only_norm = False)
+            # Measure force using information about cross coefficients
+            sigma_ij = self.sigma_ij_list[Ni]
+            epsilon_ij = self.epsilon_ij_list[Ni]       
+            fij_xyz = potentials(epsilon_ij, sigma_ij, rij, derivative = True)
+            if return_vector:
+                # Add the contribution to both Ni and its neighbors
+                force_vector[Ni] += np.sum((fij_xyz*rij_xyz.T/rij).T, axis=0)
+                force_vector[neighbor_of_i] -= (fij_xyz*rij_xyz.T/rij).T 
             else:
-                derivative_potential = LJ_potential(epsilon_ij, sigma_ij, rij, derivative = True)
-                if output == "force-vector":
-                    forces[Ni] += np.sum((derivative_potential*rij_xyz.T/rij).T, axis=0)
-                    forces[neighbor_of_i] -= (derivative_potential*rij_xyz.T/rij).T 
-                elif output == "force-matrix":
-                    forces[Ni][neighbor_of_i] += (derivative_potential*rij_xyz.T/rij).T
-        if output=="potential":
-            return energy_potential
-        elif (output == "force-vector") | (output == "force-matrix"):
-            return forces
+                # Add the contribution to the matrix
+                force_matrix[Ni][neighbor_of_i] += (fij_xyz*rij_xyz.T/rij).T
+        if return_vector:
+            return force_vector
+        else:
+            return force_matrix
 
     def wrap_in_box(self):
-        for dim in np.arange(self.dimensions):
+        for dim in np.arange(3):
             out_ids = self.atoms_positions[:, dim] \
                 > self.box_boundaries[dim][1]
             self.atoms_positions[:, dim][out_ids] \
@@ -89,38 +112,14 @@ class Utilities:
             self.atoms_positions[:, dim][out_ids] \
                 += np.diff(self.box_boundaries[dim])[0]
 
-    def calculate_density(self):
-        """Calculate the mass density."""
-        volume = np.prod(self.box_size[:3])  # Unitless
-        total_mass = np.sum(self.atoms_mass)  # Unitless
-        return total_mass/volume  # Unitless
-
-    def calculate_pressure(self):
-        """Evaluate p based on the Virial equation (Eq. 4.4.2 in Frenkel-Smit,
-        Understanding molecular simulation: from algorithms to applications, 2002)"""
-        # Ideal contribution
-        Ndof = self.dimensions*self.total_number_atoms-self.dimensions    
-        volume = np.prod(self.box_size[:3])
-        try:
-            self.calculate_temperature() # this is for later on, when velocities are computed
-            temperature = self.temperature
-        except:
-            temperature = self.desired_temperature # for MC, simply use the desired temperature
-        p_ideal = Ndof*temperature/(volume*self.dimensions)
-        # Non-ideal contribution
-        distances_forces = np.sum(self.compute_potential(output="force-matrix")*self.evaluate_rij_matrix())
-        p_nonideal = distances_forces/(volume*self.dimensions)
-        # Final pressure
-        self.pressure = p_ideal+p_nonideal
-
     def evaluate_rij_matrix(self):
         """Matrix of vectors between all particles."""
-        box_size = self.box_size[:3]
-        half_box_size = self.box_size[:3]/2.0
-        rij_matrix = np.zeros((self.total_number_atoms,self.total_number_atoms,3))
-        positions_j = self.atoms_positions
-        for Ni in range(self.total_number_atoms-1):
-            position_i = self.atoms_positions[Ni]
-            rij_xyz = (np.remainder(position_i - positions_j + half_box_size, box_size) - half_box_size)
+        Nat = np.sum(self.number_atoms)
+        Box = self.box_size[:3]
+        rij_matrix = np.zeros((Nat, Nat,3))
+        pos_j = self.atoms_positions
+        for Ni in range(Nat-1):
+            pos_i = self.atoms_positions[Ni]
+            rij_xyz = (np.remainder(pos_i - pos_j + Box/2.0, Box) - Box/2.0)
             rij_matrix[Ni] = rij_xyz
         return rij_matrix

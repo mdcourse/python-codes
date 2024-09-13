@@ -4,55 +4,91 @@ from scipy import constants as cst
 
 class Prepare:
     def __init__(self,
-                number_atoms=[10],  # List - no unit
-                epsilon=[0.1],  # List - Kcal/mol
-                sigma=[3],  # List - Angstrom
-                atom_mass=[10],  # List - g/mol
+                ureg, # Pint unit registry
+                number_atoms, # List - no unit
+                epsilon, # List - Kcal/mol
+                sigma, # List - Angstrom
+                atom_mass,  # List - g/mol
                 *args,
                 **kwargs):
+        self.ureg = ureg
         self.number_atoms = number_atoms
         self.epsilon = epsilon
         self.sigma = sigma
         self.atom_mass = atom_mass
         super().__init__(*args, **kwargs)
         self.calculate_LJunits_prefactors()
-        self.nondimensionalize_units_0()
+        self.nondimensionalize_units(["epsilon", "sigma", "atom_mass"])
         self.identify_atom_properties()
 
 
     def calculate_LJunits_prefactors(self):
-        """Calculate the Lennard-Jones units prefacors."""
-        # Define the reference distance, energy, and mass
-        self.reference_distance = self.sigma[0]  # Angstrom
-        self.reference_energy = self.epsilon[0]  # kcal/mol
-        self.reference_mass = self.atom_mass[0]  # g/mol
-        # Calculate the prefactor for the time
-        mass_kg = self.atom_mass[0]/cst.kilo/cst.Avogadro  # kg
-        epsilon_J = self.epsilon[0]*cst.calorie*cst.kilo/cst.Avogadro  # J
-        sigma_m = self.sigma[0]*cst.angstrom  # m
-        time_s = np.sqrt(mass_kg*sigma_m**2/epsilon_J)  # s
-        self.reference_time = time_s / cst.femto  # fs
-        # Calculate the prefactor for the temperature
+        """Calculate the Lennard-Jones units prefactors."""
+        # First define Boltzmann and Avogadro constants
         kB = cst.Boltzmann*cst.Avogadro/cst.calorie/cst.kilo  # kcal/mol/K
-        self.reference_temperature = self.epsilon[0]/kB  # K
-        # Calculate the prefactor for the pressure
-        pressure_pa = epsilon_J/sigma_m**3  # Pa
-        self.reference_pressure = pressure_pa/cst.atm  # atm
+        kB *= self.ureg.kcal/self.ureg.mol/self.ureg.kelvin
+        Na = cst.Avogadro/self.ureg.mol
+        # Define the reference distance, energy, and mass
+        self.ref_length = self.sigma[0]  # Angstrom
+        self.ref_energy = self.epsilon[0]  # kcal/mol
+        self.ref_mass = self.atom_mass[0]  # g/mol
+        # Optional: assert that units were correctly provided by users
+        assert self.ref_length.units == self.ureg.angstrom, \
+            f"Error: Provided sigma has wrong units, should be angstrom"
+        assert self.ref_energy.units == self.ureg.kcal/self.ureg.mol, \
+            f"Error: Provided epsilon has wrong units, should be kcal/mol"
+        assert self.ref_mass.units == self.ureg.g/self.ureg.mol, \
+            f"Error: Provided mass has wrong units, should be g/mol"
+        # Calculate the prefactor for the time (in femtosecond)
+        self.ref_time = np.sqrt(self.ref_mass \
+            *self.ref_length**2/self.ref_energy).to(self.ureg.femtosecond)
+        # Calculate the prefactor for the temperature (in Kelvin)
+        self.ref_temperature = self.ref_energy/kB  # Kelvin
+        # Calculate the prefactor for the pressure (in Atmosphere)
+        self.ref_pressure = (self.ref_energy \
+            /self.ref_length**3/Na).to(self.ureg.atmosphere)
+        # Group all the reference quantities into a list for practicality
+        self.ref_quantities = [self.ref_length, self.ref_energy,
+            self.ref_mass, self.ref_time, self.ref_pressure, self.ref_temperature]
+        self.ref_units = [ref.units for ref in self.ref_quantities]
 
-    def nondimensionalize_units_0(self):
-        # Normalize LJ properties
-        epsilon, sigma, atom_mass = [], [], []
-        for e0, s0, m0 in zip(self.epsilon, self.sigma, self.atom_mass):
-            epsilon.append(e0/self.reference_energy)
-            sigma.append(s0/self.reference_distance)
-            atom_mass.append(m0/self.reference_mass)
-        self.epsilon = epsilon
-        self.sigma = sigma
-        self.atom_mass = atom_mass
+    def nondimensionalize_units(self, quantities_to_normalise):
+        for name in quantities_to_normalise:
+            quantity = getattr(self, name)  # Get the attribute by name
+            if isinstance(quantity, list):
+                for i, element in enumerate(quantity):
+                    assert element.units in self.ref_units, \
+                        f"Error: Units not part of the reference units"
+                    ref_value = self.ref_quantities[self.ref_units.index(element.units)]
+                    quantity[i] = element/ref_value
+                    assert quantity[i].units == self.ureg.dimensionless, \
+                        f"Error: Quantities are not properly nondimensionalized"
+                    quantity[i] = quantity[i].magnitude # get rid of ureg
+                setattr(self, name, quantity)
+            elif len(np.shape(quantity)) > 0: # for position array
+                assert element.units in self.ref_units, \
+                    f"Error: Units not part of the reference units"
+                ref_value = self.ref_quantities[self.ref_units.index(element.units)]
+                quantity = quantity/ref_value
+                assert quantity.units == self.ureg.dimensionless, \
+                    f"Error: Quantities are not properly nondimensionalized"
+                quantity = quantity.magnitude # get rid of ureg
+                setattr(self, name, quantity)
+            else:
+                if quantity is not None:
+                    assert np.shape(quantity) == (), \
+                        f"Error: The quantity is a list or an array"
+                    assert quantity.units in self.ref_units, \
+                        f"Error: Units not part of the reference units"
+                    ref_value = self.ref_quantities[self.ref_units.index(quantity.units)]
+                    quantity = quantity/ref_value
+                    assert quantity.units == self.ureg.dimensionless, \
+                        f"Error: Quantities are not properly nondimensionalized"
+                    quantity = quantity.magnitude # get rid of ureg
+                    setattr(self, name, quantity)
 
     def identify_atom_properties(self):
-        """Identify the atom properties for each atom."""
-        self.total_number_atoms = np.sum(self.number_atoms)
+        """Identify the properties for each atom."""
         atoms_sigma = []
         atoms_epsilon = []
         atoms_mass = []
