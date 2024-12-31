@@ -2,6 +2,7 @@
 
 import numpy as np
 from InitializeSimulation import InitializeSimulation
+from utilities import compute_vector_matrix, compute_force_matrix
 
 
 class Measurements(InitializeSimulation):
@@ -14,6 +15,8 @@ class Measurements(InitializeSimulation):
     def calculate_pressure(self):
         """Evaluate p based on the Virial equation (Eq. 4.4.2 in Frenkel-Smit,
         Understanding molecular simulation: from algorithms to applications, 2002)"""
+
+        
         # Compute the ideal contribution
         Nat = np.sum(self.number_atoms) # total number of atoms
         dimension = 3 # 3D is the only possibility here
@@ -25,9 +28,14 @@ class Measurements(InitializeSimulation):
         except:
             temperature = self.desired_temperature # for MC, simply use the desired temperature
         p_ideal = Ndof*temperature/(volume*dimension)
+
         # Compute the non-ideal contribution
-        distances_forces = np.sum(self.compute_force(return_vector = False) \
-                                  *self.evaluate_rij_matrix())
+        vector_matrix = compute_vector_matrix(self.atoms_positions, self.box_size[:3])
+        force_matrix = compute_force_matrix(self.neighbor_lists,
+                                    self.atoms_positions, self.box_size,
+                                    self.sigma_ij_list, self.epsilon_ij_list)
+
+        distances_forces = np.sum(force_matrix*vector_matrix)
         p_nonideal = distances_forces/(volume*dimension)
         # Final pressure
         self.pressure = p_ideal+p_nonideal

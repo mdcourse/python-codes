@@ -31,21 +31,26 @@ class InitializeSimulation(Prepare, Utilities):
         self.data_folder = data_folder
         if os.path.exists(self.data_folder) is False:
             os.mkdir(self.data_folder)
-        self.nondimensionalize_units(["box_dimensions", "cut_off",
+
+        self.nondimensionalize_units(["box_dimensions",
+                                      "cut_off",
                                       "initial_positions"])
         self.define_box()
         self.populate_box()
         self.update_neighbor_lists()
         self.update_cross_coefficients()
 
-
     def define_box(self):
         """Define the simulation box. Only 3D boxes are supported."""
+
+        if len(self.box_dimensions) != 3:
+            raise ValueError("box_dimensions must have exactly three elements (for 3D).")
+
         box_boundaries = np.zeros((3, 2))
-        for dim, L in enumerate(self.box_dimensions):
-            box_boundaries[dim] = -L/2, L/2
+        for dim, length in enumerate(self.box_dimensions):
+            box_boundaries[dim] = -length / 2, length / 2
         self.box_boundaries = box_boundaries
-        box_size = np.diff(self.box_boundaries).reshape(3)
+        box_size = self.box_boundaries[:, 1] - self.box_boundaries[:, 0]
         box_geometry = np.array([90, 90, 90])
         self.box_size = np.array(box_size.tolist()+box_geometry.tolist())
 
