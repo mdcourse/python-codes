@@ -4,6 +4,7 @@ from logger import log_simulation_data
 import numpy as np
 import copy
 from Measurements import Measurements
+from utilities import compute_potential
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -47,7 +48,9 @@ class MonteCarlo(Measurements):
             # If self.Epot does not exist yet, calculate it
             # It should only be necessary when step = 0
             if hasattr(self, 'Epot') is False:
-                self.Epot = self.compute_potential()
+                self.Epot = compute_potential(self.neighbor_lists,
+                                              self.atoms_positions, self.box_size,
+                                              self.sigma_ij_list, self.epsilon_ij_list)
             # Make a copy of the initial atom positions and initial energy
             initial_Epot = self.Epot
             initial_positions = copy.deepcopy(self.atoms_positions)
@@ -58,7 +61,9 @@ class MonteCarlo(Measurements):
             move = (np.random.random(3)-0.5)*self.displace_mc 
             self.atoms_positions[atom_id] += move
             # Measure the potential energy of the new configuration
-            trial_Epot = self.compute_potential()
+            trial_Epot = compute_potential(self.neighbor_lists,
+                                              self.atoms_positions, self.box_size,
+                                              self.sigma_ij_list, self.epsilon_ij_list)
             # Evaluate whether the new configuration should be kept or not
             beta =  1/self.desired_temperature
             delta_E = trial_Epot-initial_Epot
@@ -86,7 +91,9 @@ class MonteCarlo(Measurements):
             self.update_neighbor_lists()
             self.update_cross_coefficients()
             if hasattr(self, 'Epot') is False:
-                self.Epot = self.compute_potential()
+                self.Epot = compute_potential(self.neighbor_lists,
+                                              self.atoms_positions, self.box_size,
+                                              self.sigma_ij_list, self.epsilon_ij_list)
             initial_Epot = self.Epot
             initial_positions = copy.deepcopy(self.atoms_positions)
             # Pick an atom of type one randomly
@@ -118,7 +125,9 @@ class MonteCarlo(Measurements):
             self.assign_atom_properties()
             self.update_cross_coefficients(force_update=True)
             # Measure the potential energy of the new configuration
-            trial_Epot = self.compute_potential()
+            trial_Epot = compute_potential(self.neighbor_lists,
+                                              self.atoms_positions, self.box_size,
+                                              self.sigma_ij_list, self.epsilon_ij_list)
             # Evaluate whether the new configuration should be kept or not
             beta =  1/self.desired_temperature
             delta_E = trial_Epot-initial_Epot
@@ -143,7 +152,9 @@ class MonteCarlo(Measurements):
             # The first step is to make a copy of the previous state
             # Since atoms numbers are evolving, its also important to store the
             # neighbor, sigma, and epsilon lists
-            self.Epot = self.compute_potential() # TOFIX: not necessary every time
+            self.Epot = compute_potential(self.neighbor_lists,
+                                              self.atoms_positions, self.box_size,
+                                              self.sigma_ij_list, self.epsilon_ij_list)# TOFIX: not necessary every time
             initial_positions = copy.deepcopy(self.atoms_positions)
             initial_number_atoms = copy.deepcopy(self.number_atoms)
             initial_neighbor_lists = copy.deepcopy(self.neighbor_lists)
@@ -189,7 +200,9 @@ class MonteCarlo(Measurements):
         self.update_neighbor_lists()
         self.assign_atom_properties()
         self.update_cross_coefficients()
-        trial_Epot = self.compute_potential()
+        trial_Epot = compute_potential(self.neighbor_lists,
+                                              self.atoms_positions, self.box_size,
+                                              self.sigma_ij_list, self.epsilon_ij_list)
         Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
         beta =  1/self.desired_temperature
         Nat = np.sum(self.number_atoms) # Number atoms, should it really be N? of N (type) ?
@@ -212,7 +225,9 @@ class MonteCarlo(Measurements):
             self.update_neighbor_lists()
             self.assign_atom_properties()
             self.update_cross_coefficients()
-            trial_Epot = self.compute_potential()
+            trial_Epot = compute_potential(self.neighbor_lists,
+                                              self.atoms_positions, self.box_size,
+                                              self.sigma_ij_list, self.epsilon_ij_list)
             Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
             beta =  1/self.desired_temperature
             Nat = np.sum(self.number_atoms) # Number atoms, should it really be N? of N (type) ?

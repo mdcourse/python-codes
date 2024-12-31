@@ -19,7 +19,6 @@ def nondimensionalize_array(array: np.ndarray, ref_value: pint.Quantity) -> np.n
     """Nondimensionalize a NumPy array."""
     return (array / ref_value).magnitude
 
-
 @njit
 def contact_matrix(positions, cutoff, box):
     """Compute a boolean contact matrix from the particle positions."""
@@ -67,7 +66,6 @@ def compute_vector_matrix(atoms_positions, box_size):
                                 + box_size/2.0, box_size) - box_size/2.0)
         rij_matrix[Ni] = rij_xyz
     return rij_matrix
-
 
 @njit
 def compute_force_vector(neighbor_lists, atoms_positions, box_size,
@@ -125,3 +123,38 @@ def compute_force_matrix(neighbor_lists, atoms_positions, box_size,
             force_matrix[Ni, neighbor] += fij_xyz[idx] * rij_xyz[idx] / rij[idx]
 
     return force_matrix
+
+@njit
+def compute_potential(neighbor_lists, atoms_positions, box_size,
+                      sigma_ij_list, epsilon_ij_list):
+    """Compute the potential energy by summing up all pair contributions."""
+    total_atoms = atoms_positions.shape[0]  # Number of particles in the system
+    energy_potential = 0
+    for Ni in np.arange(total_atoms-1):
+        # Read neighbor list
+        neighbor_of_i = neighbor_lists[Ni]
+        # Measure distance
+        rij, _ = compute_distance(atoms_positions[Ni],
+                                  atoms_positions[neighbor_of_i],
+                                  box_size, only_norm=True)
+        # Measure potential using pre-calculated cross coefficients
+        sigma_ij = sigma_ij_list[Ni]
+        epsilon_ij = epsilon_ij_list[Ni]
+        energy_potential += np.sum(potentials(epsilon_ij, sigma_ij, rij))
+    return energy_potential
+
+"""
+@njit
+def wrap_in_box(atoms_positions, box_boundaries):
+    #Wrap particle positions into the simulation box.
+    # Iterate over each spatial dimension
+    for dim in range(3):
+        # Particles outside the upper boundary
+        out_ids = atoms_positions[:, dim] > box_boundaries[dim, 1]
+        atoms_positions[out_ids, dim] -= box_boundaries[dim, 1] - box_boundaries[dim, 0]
+
+        # Particles outside the lower boundary
+        out_ids = atoms_positions[:, dim] < box_boundaries[dim, 0]
+        atoms_positions[out_ids, dim] += box_boundaries[dim, 1] - box_boundaries[dim, 0]
+    return atoms_positions
+"""

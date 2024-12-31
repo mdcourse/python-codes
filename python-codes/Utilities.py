@@ -40,23 +40,10 @@ class Utilities:
             self.sigma_ij_list = sigma_ij_list
             self.epsilon_ij_list = epsilon_ij_list
 
-    def compute_potential(self):
-        """Compute the potential energy by summing up all pair contributions."""
-        energy_potential = 0
-        for Ni in np.arange(np.sum(self.number_atoms)-1):
-            # Read neighbor list
-            neighbor_of_i = self.neighbor_lists[Ni]
-            # Measure distance
-            rij, _ = compute_distance(self.atoms_positions[Ni],
-                                      self.atoms_positions[neighbor_of_i],
-                                      self.box_size)
-            # Measure potential using pre-calculated cross coefficients
-            sigma_ij = self.sigma_ij_list[Ni]
-            epsilon_ij = self.epsilon_ij_list[Ni]
-            energy_potential += np.sum(potentials(epsilon_ij, sigma_ij, rij))
-        return energy_potential
-
     def wrap_in_box(self):
+        """Wrap particle positions into the simulation box."""
+        # Note: act on atom position, called often, does not 
+        # return anything --> make sense as a method
         for dim in np.arange(3):
             out_ids = self.atoms_positions[:, dim] \
                 > self.box_boundaries[dim][1]
@@ -66,3 +53,18 @@ class Utilities:
                 < self.box_boundaries[dim][0]
             self.atoms_positions[:, dim][out_ids] \
                 += np.diff(self.box_boundaries[dim])[0]
+
+    def wrap_in_box(self):
+        """Wrap particle positions into the simulation box."""
+        # Iterate over each spatial dimension (x, y, z)
+        for dim in range(3):
+            # Length of the box in the current dimension
+            box_length = self.box_boundaries[dim][1] - self.box_boundaries[dim][0]
+            
+            # Particles outside the upper boundary
+            out_ids_upper = self.atoms_positions[:, dim] > self.box_boundaries[dim][1]
+            self.atoms_positions[out_ids_upper, dim] -= box_length
+
+            # Particles outside the lower boundary
+            out_ids_lower = self.atoms_positions[:, dim] < self.box_boundaries[dim][0]
+            self.atoms_positions[out_ids_lower, dim] += box_length
