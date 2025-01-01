@@ -1,3 +1,5 @@
+"""Utilities for computing particle contact matrices and neighbor lists."""
+
 import numpy as np
 from numba import njit
 

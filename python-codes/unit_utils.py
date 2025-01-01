@@ -1,3 +1,5 @@
+"""Utilities for computing Lennard-Jones potentials and total potential energy."""
+
 import pint
 import numpy as np
 

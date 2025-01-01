@@ -1,3 +1,6 @@
+"""Utilities for calculating interatomic distances and vector matrices
+with periodic boundary conditions."""
+
 import numpy as np
 from numba import njit
 

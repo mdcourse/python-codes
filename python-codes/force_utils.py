@@ -1,3 +1,6 @@
+"""Utilities for computing interparticle force vectors and matrices 
+using Lennard-Jones potentials and periodic boundary conditions."""
+
 import numpy as np
 from numba import njit
 from pot_utils import LJ_potentials

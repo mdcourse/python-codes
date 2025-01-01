@@ -1,3 +1,5 @@
+"""Utilities for computing Lennard-Jones potentials and total potential energy."""
+
 from numba import njit
 from distance_utils import compute_distance
 
