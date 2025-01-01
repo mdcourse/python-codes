@@ -1,12 +1,11 @@
 from dumper import update_dump_file
 from logger import log_simulation_data
-from utilities import compute_force_vector, compute_potential
-
+from force_utils import compute_force_vector
+from pot_utils import compute_potential
 
 from Measurements import Measurements
 import numpy as np
 import copy
-import os
 
 
 class MinimizeEnergy(Measurements):

@@ -1,5 +1,3 @@
-
-
 import csv
 
 def import_data(file_path):

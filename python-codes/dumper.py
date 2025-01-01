@@ -1,5 +1,3 @@
-
-
 import numpy as np
 
 def update_dump_file(code, filename, velocity=False):

@@ -1,5 +1,3 @@
-
-
 import numpy as np
 from InitializeSimulation import InitializeSimulation
 from pint import UnitRegistry

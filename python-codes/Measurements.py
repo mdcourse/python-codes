@@ -2,7 +2,8 @@
 
 import numpy as np
 from InitializeSimulation import InitializeSimulation
-from utilities import compute_vector_matrix, compute_force_matrix
+from distance_utils import compute_vector_matrix
+from force_utils import compute_force_matrix
 
 
 class Measurements(InitializeSimulation):

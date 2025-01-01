@@ -1,5 +1,3 @@
-
-
 from MinimizeEnergy import MinimizeEnergy
 from pint import UnitRegistry
 ureg = UnitRegistry()

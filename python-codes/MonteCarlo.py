@@ -4,7 +4,7 @@ from logger import log_simulation_data
 import numpy as np
 import copy
 from Measurements import Measurements
-from utilities import compute_potential
+from pot_utils import compute_potential
 
 import warnings
 warnings.filterwarnings('ignore')

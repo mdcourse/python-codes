@@ -1,6 +1,6 @@
 import os
 import logging
-from utilities import compute_potential
+from pot_utils import compute_potential
 
 # Function to set up the logger
 def setup_logger(folder_name, overwrite=False):
