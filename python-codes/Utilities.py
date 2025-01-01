@@ -10,22 +10,19 @@ class Utilities:
         super().__init__(*args, **kwargs)
 
     def update_neighbor_lists(self, force_update=False):
-        """Update the neighbor lists."""
-        # SG: makes sense as a method since it relies on and updates the object's state
+        """Update the neighbor lists based on contact analysis."""
         if (self.step % self.neighbor == 0) or force_update:  # Check if an update is needed
             # Compute the contact matrix based on current particle positions
             matrix = contact_matrix(self.atoms_positions,
                                     cutoff=self.cut_off,
                                     box=self.box_size)
+
             # Compute the neighbor lists from the contact matrix
             self.neighbor_lists = compute_neighbor_lists(matrix)
-
 
     def update_cross_coefficients(self, force_update=False):
         """Update the Lennard-Jones cross-coefficients for all atom pairs."""
         # Check if an update is necessary
-        # SG: makes sense as a method since it relies on and updates the object's state
-        # Check if an update is necessary based on the step or force_update flag
         if (self.step % self.neighbor == 0) or force_update:
                 # Initialize lists to store cross-coefficients
                 sigma_ijs = []  # To store sigma_ij values
@@ -58,8 +55,6 @@ class Utilities:
 
     def wrap_in_box(self):
         """Wrap particle positions into the simulation box."""
-        # Note: act on atom position, called often, does not 
-        # return anything --> make sense as a method
         # Iterate over each spatial dimension (x, y, z)
         for dim in range(3):
             # Length of the box in the current dimension
