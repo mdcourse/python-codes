@@ -38,7 +38,7 @@ mc = MonteCarlo(
     thermo_outputs="Epot-press",
     desired_temperature=T, # K
     neighbor=1,
-    displace_mc = 0.1*ureg.angstrom
+    displace_mc = 0.25*sig_1
     # desired_mu = desired_mu,
 )
 mc.run()

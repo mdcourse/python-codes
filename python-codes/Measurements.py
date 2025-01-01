@@ -31,9 +31,7 @@ class Measurements(InitializeSimulation):
 
         # Compute the non-ideal contribution
         vector_matrix = compute_vector_matrix(self.atoms_positions, self.box_size[:3])
-        force_matrix = compute_force_matrix(self.neighbor_lists,
-                                    self.atoms_positions, self.box_size,
-                                    self.sigma_ij_list, self.epsilon_ij_list)
+        force_matrix = compute_force_matrix(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
 
         distances_forces = np.sum(force_matrix*vector_matrix)
         p_nonideal = distances_forces/(volume*dimension)

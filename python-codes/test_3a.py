@@ -6,7 +6,7 @@ from pint import UnitRegistry
 ureg = UnitRegistry()
 
 # Define atom number of each group
-nmb_1, nmb_2= [2, 3]
+nmb_1, nmb_2= [10, 10]
 # Define LJ parameters (sigma)
 sig_1, sig_2 = [3, 4]*ureg.angstrom
 # Define LJ parameters (epsilon)
