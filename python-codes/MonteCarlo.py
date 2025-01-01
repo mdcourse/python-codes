@@ -4,7 +4,8 @@ from logger import log_simulation_data
 import numpy as np
 import copy
 from InitializeSimulation import InitializeSimulation
-from pot_utils import compute_potential
+from utils_pot import compute_potential
+from utils_mc import calculate_Lambda
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -75,16 +76,6 @@ class MonteCarlo(InitializeSimulation):
             else: # Reject new position
                 self.atoms_positions = initial_positions # Revert to initial positions
                 self.failed_move += 1
-
-    def run(self):
-        """Perform the loop over time."""
-        for self.step in range(0, self.maximum_steps+1):
-            self.monte_carlo_move()
-            self.monte_carlo_swap()
-            self.wrap_in_box()
-            self.monte_carlo_exchange()
-            log_simulation_data(self)
-            update_dump_file(self, "dump.mc.lammpstrj")
 
     def monte_carlo_swap(self):
         if self.swap_type[0] is not None:
@@ -187,7 +178,7 @@ class MonteCarlo(InitializeSimulation):
         self.assign_atom_properties()
         self.update_cross_coefficients()
         trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
-        Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
+        Lambda = calculate_Lambda(self.desired_temperature, self.atom_mass[self.inserted_type])
         beta =  1/self.desired_temperature
         Nat = np.sum(self.number_atoms) # Number atoms, should it really be N? of N (type) ?
         Vol = np.prod(self.box_mda[:3]) # box volume
@@ -208,7 +199,7 @@ class MonteCarlo(InitializeSimulation):
             self.assign_atom_properties()
             self.update_cross_coefficients()
             trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
-            Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
+            Lambda = calculate_Lambda(self.desired_temperature, self.atom_mass[self.inserted_type])
             beta =  1/self.desired_temperature
             Nat = np.sum(self.number_atoms) # Number atoms, should it really be N? of N (type) ?
             Vol = np.prod(self.box_mda[:3]) # box volume
@@ -218,7 +209,12 @@ class MonteCarlo(InitializeSimulation):
         else:
             print("Error: no more atoms to delete")
 
-    def calculate_Lambda(self, mass):
-        """Estimate the de Broglie wavelength."""
-        T = self.desired_temperature  # N
-        return 1/np.sqrt(2*np.pi*mass*T)
+    def run(self):
+        """Perform the loop over time."""
+        for self.step in range(0, self.maximum_steps+1):
+            self.monte_carlo_move()
+            self.monte_carlo_swap()
+            self.wrap_in_box()
+            self.monte_carlo_exchange()
+            log_simulation_data(self)
+            update_dump_file(self, "dump.mc.lammpstrj")

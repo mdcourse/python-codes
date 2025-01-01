@@ -1,7 +1,7 @@
 import os
 import logging
-from pot_utils import compute_potential
-from meas_utils import calculate_pressure
+from utils_pot import compute_potential
+from utils_meas import calculate_pressure
 
 # Function to set up the logger
 def setup_logger(folder_name, overwrite=False):

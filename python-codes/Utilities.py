@@ -1,6 +1,6 @@
 import numpy as np
 
-from contact_utils import contact_matrix, compute_neighbor_lists
+from utils_contact import contact_matrix, compute_neighbor_lists
 
 
 class Utilities:

@@ -3,7 +3,7 @@ from scipy import constants as cst
 from typing import List
 import pint
 
-from unit_utils import validate_units, nondimensionalize_single, nondimensionalize_array
+from utils_unit import validate_units, nondimensionalize_single, nondimensionalize_array
 
 class Prepare:
     def __init__(self,
