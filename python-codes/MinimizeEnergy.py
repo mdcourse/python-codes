@@ -1,14 +1,14 @@
 from dumper import update_dump_file
 from logger import log_simulation_data
+from force_utils import compute_force_vector
+from pot_utils import compute_potential
 
-
-from Measurements import Measurements
+from InitializeSimulation import InitializeSimulation
 import numpy as np
 import copy
-import os
 
 
-class MinimizeEnergy(Measurements):
+class MinimizeEnergy(InitializeSimulation):
     def __init__(self,
                 maximum_steps,
                 *args,
@@ -26,9 +26,9 @@ class MinimizeEnergy(Measurements):
             self.update_cross_coefficients() # Recalculate the cross coefficients, if necessary
             # Compute Epot/MaxF/force
             if hasattr(self, 'Epot') is False: # If self.Epot does not exist yet, calculate it
-                self.Epot = self.compute_potential()
+                self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             if hasattr(self, 'MaxF') is False: # If self.MaxF does not exist yet, calculate it
-                forces = self.compute_force()
+                forces = compute_force_vector(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
                 self.MaxF = np.max(np.abs(forces))
             init_Epot = self.Epot
             init_MaxF = self.MaxF
@@ -38,13 +38,15 @@ class MinimizeEnergy(Measurements):
             self.atoms_positions = self.atoms_positions \
                 + forces/init_MaxF*self.displacement
             # Recalculate the energy
-            trial_Epot = self.compute_potential()
+            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             # Keep the more favorable energy
             if trial_Epot < init_Epot: # accept new position
                 self.Epot = trial_Epot
-                forces = self.compute_force() # calculate the new max force and save it
+                forces = compute_force_vector(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients) # calculate the new max force and save it
                 self.MaxF = np.max(np.abs(forces))
                 self.wrap_in_box()  # Wrap atoms in the box
+                #self.atoms_positions = wrap_in_box(self.atoms_positions,
+                #                                   self.box_boundaries)
                 self.displacement *= 1.2 # Multiply the displacement by a factor 1.2
             else: # reject new position
                 self.Epot = init_Epot # Revert to old energy

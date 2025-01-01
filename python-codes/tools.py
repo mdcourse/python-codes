@@ -1,5 +1,3 @@
-
-
 import numpy as np
 
 import logging
@@ -22,7 +20,7 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-def update_dump_file(code, filename, velocity=False):
+def update_dump_file(code, filename: str, velocity: bool = False) -> None:
     if code.dumping_period is not None:
         if code.step % code.dumping_period == 0:
             # Convert units to the *real* dimensions
@@ -70,7 +68,7 @@ def update_dump_file(code, filename, velocity=False):
                     cpt += 1
             f.close()
 
-def log_simulation_data(code):
+def log_simulation_data(code) -> None: 
     if code.thermo_period is not None:
         if code.step % code.thermo_period == 0:
             if code.step == 0:

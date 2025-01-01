@@ -1,10 +1,8 @@
-
-
 import numpy as np
-from Measurements import Measurements
+from InitializeSimulation import InitializeSimulation
 
 
-class MolecularDynamics(Measurements):
+class MolecularDynamics(InitializeSimulation):
     def __init__(self,
                 *args,
                 **kwargs,
