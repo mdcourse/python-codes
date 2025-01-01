@@ -48,7 +48,7 @@ class MonteCarlo(Measurements):
             # If self.Epot does not exist yet, calculate it
             # It should only be necessary when step = 0
             if hasattr(self, 'Epot') is False:
-                self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+                self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             # Make a copy of the initial atom positions and initial energy
             initial_Epot = self.Epot
             initial_positions = copy.deepcopy(self.atoms_positions)
@@ -59,7 +59,7 @@ class MonteCarlo(Measurements):
             move = (np.random.random(3)-0.5)*self.displace_mc 
             self.atoms_positions[atom_id] += move
             # Measure the potential energy of the new configuration
-            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             # Evaluate whether the new configuration should be kept or not
             beta =  1/self.desired_temperature
             delta_E = trial_Epot-initial_Epot
@@ -87,7 +87,7 @@ class MonteCarlo(Measurements):
             self.update_neighbor_lists()
             self.update_cross_coefficients()
             if hasattr(self, 'Epot') is False:
-                self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+                self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             initial_Epot = self.Epot
             initial_positions = copy.deepcopy(self.atoms_positions)
             # Pick an atom of type one randomly
@@ -112,13 +112,11 @@ class MonteCarlo(Measurements):
             initial_atoms_type = self.atoms_type
             initial_cross_coefficients = self.cross_coefficients
             initial_neighbor_lists = self.neighbor_lists
-            # update_neighbor_lists(self.atoms_positions, self.cut_off, self.box_size,
-            #                       self.step, self.neighbor, force_update=True)
             self.update_neighbor_lists(force_update=True)
             self.assign_atom_properties()
             self.update_cross_coefficients(force_update=True)
             # Measure the potential energy of the new configuration
-            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             # Evaluate whether the new configuration should be kept or not
             beta =  1/self.desired_temperature
             delta_E = trial_Epot-initial_Epot
@@ -142,7 +140,7 @@ class MonteCarlo(Measurements):
             # The first step is to make a copy of the previous state
             # Since atoms numbers are evolving, its also important to store the
             # neighbor, sigma, and epsilon lists
-            self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)# TOFIX: not necessary every time
+            self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)# TOFIX: not necessary every time
             initial_positions = copy.deepcopy(self.atoms_positions)
             initial_number_atoms = copy.deepcopy(self.number_atoms)
             initial_neighbor_lists = copy.deepcopy(self.neighbor_lists)
@@ -181,16 +179,14 @@ class MonteCarlo(Measurements):
         self.atoms_positions = np.vstack([self.atoms_positions[:shift_id],
                                         new_atom_position,
                                         self.atoms_positions[shift_id:]])
-        # update_neighbor_lists(self.atoms_positions, self.cut_off, self.box_size,
-        #                        self.step, self.neighbor, force_update=False)
         self.update_neighbor_lists()
         self.assign_atom_properties()
         self.update_cross_coefficients()
-        trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+        trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
         Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
         beta =  1/self.desired_temperature
         Nat = np.sum(self.number_atoms) # Number atoms, should it really be N? of N (type) ?
-        Vol = np.prod(self.box_size[:3]) # box volume
+        Vol = np.prod(self.box_mda[:3]) # box volume
         # dimension of 3 is enforced in the power of the Lambda
         self.acceptation_probability = np.min([1, Vol/(Lambda**3*Nat) \
             *np.exp(beta*(self.desired_mu-trial_Epot+self.Epot))])
@@ -204,16 +200,14 @@ class MonteCarlo(Measurements):
             for N in self.number_atoms[:self.inserted_type]:
                 shift_id += N
             self.atoms_positions = np.delete(self.atoms_positions, shift_id+atom_id, axis=0)
-            #update_neighbor_lists(self.atoms_positions, self.cut_off, self.box_size,
-            #                      self.step, self.neighbor, force_update=False)
             self.update_neighbor_lists()
             self.assign_atom_properties()
             self.update_cross_coefficients()
-            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             Lambda = self.calculate_Lambda(self.atom_mass[self.inserted_type])
             beta =  1/self.desired_temperature
             Nat = np.sum(self.number_atoms) # Number atoms, should it really be N? of N (type) ?
-            Vol = np.prod(self.box_size[:3]) # box volume
+            Vol = np.prod(self.box_mda[:3]) # box volume
             # dimension of 3 is enforced in the power of the Lambda
             self.acceptation_probability = np.min([1, (Lambda**3 *(Nat-1)/Vol) \
                 *np.exp(-beta*(self.desired_mu+trial_Epot-self.Epot))])

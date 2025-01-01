@@ -15,7 +15,7 @@ class Utilities:
             # Compute the contact matrix based on current particle positions
             matrix = contact_matrix(self.atoms_positions,
                                     cutoff=self.cut_off,
-                                    box=self.box_size)
+                                    box=self.box_mda)
 
             # Compute the neighbor lists from the contact matrix
             self.neighbor_lists = compute_neighbor_lists(matrix)

@@ -42,7 +42,7 @@ def log_simulation_data(code):
     if code.thermo_period is not None:
         if code.step % code.thermo_period == 0:
             if code.step == 0:
-                Epot = compute_potential(code.neighbor_lists, code.atoms_positions, code.box_size, code.cross_coefficients) * code.ref_energy  # kcal/mol
+                Epot = compute_potential(code.neighbor_lists, code.atoms_positions, code.box_mda, code.cross_coefficients) * code.ref_energy  # kcal/mol
             else:
                 Epot = code.Epot * code.ref_energy  # kcal/mol
             if code.step == 0:

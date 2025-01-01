@@ -27,12 +27,12 @@ class InitializeSimulation(Prepare, Utilities):
         self.dumping_period = dumping_period
         self.thermo_outputs = thermo_outputs
         self.data_folder = data_folder
+
+        # If needed, create folder for output
         if os.path.exists(self.data_folder) is False:
             os.mkdir(self.data_folder)
 
-        self.nondimensionalize_units(["box_dimensions",
-                                      "cut_off",
-                                      "initial_positions"])
+        self.nondimensionalize_units(["box_dimensions", "cut_off", "initial_positions"])
         self.define_box()
         self.populate_box()
         self.update_neighbor_lists()
@@ -71,7 +71,8 @@ class InitializeSimulation(Prepare, Utilities):
         if self.initial_positions is None:
             # Create random positions within the box
             atoms_positions = np.zeros((total_atoms, 3))
-            for dim in np.arange(3):
+            for dim in range(len(self.box_dimensions)):
+
                 # Get the size of the box in the current dimension
                 diff_box = np.diff(self.box_boundaries[dim])
 

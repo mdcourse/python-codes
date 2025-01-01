@@ -26,9 +26,9 @@ class MinimizeEnergy(Measurements):
             self.update_cross_coefficients() # Recalculate the cross coefficients, if necessary
             # Compute Epot/MaxF/force
             if hasattr(self, 'Epot') is False: # If self.Epot does not exist yet, calculate it
-                self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+                self.Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             if hasattr(self, 'MaxF') is False: # If self.MaxF does not exist yet, calculate it
-                forces = compute_force_vector(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+                forces = compute_force_vector(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
                 self.MaxF = np.max(np.abs(forces))
             init_Epot = self.Epot
             init_MaxF = self.MaxF
@@ -38,11 +38,11 @@ class MinimizeEnergy(Measurements):
             self.atoms_positions = self.atoms_positions \
                 + forces/init_MaxF*self.displacement
             # Recalculate the energy
-            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+            trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             # Keep the more favorable energy
             if trial_Epot < init_Epot: # accept new position
                 self.Epot = trial_Epot
-                forces = compute_force_vector(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients) # calculate the new max force and save it
+                forces = compute_force_vector(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients) # calculate the new max force and save it
                 self.MaxF = np.max(np.abs(forces))
                 self.wrap_in_box()  # Wrap atoms in the box
                 #self.atoms_positions = wrap_in_box(self.atoms_positions,

@@ -22,7 +22,7 @@ class Measurements(InitializeSimulation):
         Nat = np.sum(self.number_atoms) # total number of atoms
         dimension = 3 # 3D is the only possibility here
         Ndof = dimension*Nat-dimension    
-        volume = np.prod(self.box_size[:3]) # box volume
+        volume = np.prod(self.box_mda[:3]) # box volume
         try:
             self.calculate_temperature() # this is for later on, when velocities are computed
             temperature = self.temperature
@@ -31,8 +31,8 @@ class Measurements(InitializeSimulation):
         p_ideal = Ndof*temperature/(volume*dimension)
 
         # Compute the non-ideal contribution
-        vector_matrix = compute_vector_matrix(self.atoms_positions, self.box_size[:3])
-        force_matrix = compute_force_matrix(self.neighbor_lists, self.atoms_positions, self.box_size, self.cross_coefficients)
+        vector_matrix = compute_vector_matrix(self.atoms_positions, self.box_mda[:3])
+        force_matrix = compute_force_matrix(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
 
         distances_forces = np.sum(force_matrix*vector_matrix)
         p_nonideal = distances_forces/(volume*dimension)
@@ -42,6 +42,6 @@ class Measurements(InitializeSimulation):
     def calculate_density(self):
         """Calculate the mass density."""
         # TOFIX: not used yet
-        volume = np.prod(self.box_size[:3])  # Unitless
+        volume = np.prod(self.box_mda[:3])  # Unitless
         total_mass = np.sum(self.atoms_mass)  # Unitless
         return total_mass/volume  # Unitless

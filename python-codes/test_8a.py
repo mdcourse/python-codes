@@ -49,11 +49,9 @@ def test_output_files():
     "Test failed: log file was not created"
     print("Test passed")
 
-ti = time.time()
 # If the script is run directly, execute the tests
 if __name__ == "__main__":
     import pytest
     # Run pytest programmatically
     pytest.main(["-s", __file__])
 tf = time.time()
-print(tf-ti, "second")

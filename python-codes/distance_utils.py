@@ -3,20 +3,21 @@ with periodic boundary conditions."""
 
 import numpy as np
 from numba import njit
+from typing import Tuple
 
 @njit
-def compute_distance(position_i, positions_j, box_size):
+def compute_distance(position_i: np.ndarray, positions_j: np.ndarray, box_size: np.ndarray) -> Tuple[float, np.ndarray]:
     """Measure the distances between a single atom and its neighbors, taking into account periodic boundary conditions."""
     rij_xyz = np.remainder(position_i - positions_j + box_size[:3] / 2.0, box_size[:3]) - box_size[:3] / 2.0
     norms = np.sqrt(np.sum(rij_xyz**2))
     return norms, rij_xyz
 
 @njit
-def compute_vector_matrix(atoms_positions, box_size):
+def compute_vector_matrix(atoms_positions: np.ndarray, box_size: np.ndarray) -> np.ndarray:
     """Matrix of vectors between all particles."""
-    Nat = atoms_positions.shape[0]
-    rij_matrix = np.zeros((Nat, Nat, 3))
-    for Ni in range(Nat-1):
+    total_atoms = atoms_positions.shape[0]
+    rij_matrix = np.zeros((total_atoms, total_atoms, 3))
+    for Ni in range(total_atoms-1):
         rij_xyz = (np.remainder(atoms_positions[Ni] - atoms_positions
                                 + box_size/2.0, box_size) - box_size/2.0)
         rij_matrix[Ni] = rij_xyz

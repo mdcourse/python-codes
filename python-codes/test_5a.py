@@ -5,7 +5,7 @@ import os
 import time
 
 # Define atom number of each group
-nmb_1, nmb_2= [2, 3]
+nmb_1, nmb_2= [50, 50]
 # Define LJ parameters (sigma)
 sig_1, sig_2 = [3, 4]*ureg.angstrom
 # Define LJ parameters (epsilon)
@@ -21,8 +21,8 @@ rc = 2.5*sig_1
 minimizer = MinimizeEnergy(
     ureg = ureg,
     maximum_steps=100,
-    thermo_period=25,
-    dumping_period=25,
+    thermo_period=1,
+    dumping_period=1,
     number_atoms=[nmb_1, nmb_2],
     epsilon=[eps_1, eps_2], # kcal/mol
     sigma=[sig_1, sig_2], # A
@@ -51,4 +51,4 @@ if __name__ == "__main__":
     pytest.main(["-s", __file__])
 
 tf = time.time()
-print(tf-ti, "second")
+# print(tf-ti, "second")

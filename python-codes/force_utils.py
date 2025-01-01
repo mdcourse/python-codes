@@ -5,9 +5,11 @@ import numpy as np
 from numba import njit
 from pot_utils import LJ_potentials
 from distance_utils import compute_distance
+from typing import List
 
 @njit
-def compute_force_vector(neighbor_lists, atoms_positions, box_size, cross_coefficients):
+def compute_force_vector(neighbor_lists: List[np.ndarray], atoms_positions: np.ndarray, 
+                         box_size: np.ndarray, cross_coefficients: np.ndarray) -> np.ndarray:
     """Compute the force vector between the particles."""
     total_atoms = atoms_positions.shape[0]
     force_vector = np.zeros((total_atoms, 3))
@@ -23,7 +25,8 @@ def compute_force_vector(neighbor_lists, atoms_positions, box_size, cross_coeffi
     return force_vector
 
 @njit
-def compute_force_matrix(neighbor_lists, atoms_positions, box_size, cross_coefficients):
+def compute_force_matrix(neighbor_lists: List[np.ndarray], atoms_positions: np.ndarray, 
+                         box_size: np.ndarray, cross_coefficients: np.ndarray) -> np.ndarray:
     """Compute the force matrix between the particles."""
     total_atoms = atoms_positions.shape[0]
     force_matrix = np.zeros((total_atoms, total_atoms, 3))
