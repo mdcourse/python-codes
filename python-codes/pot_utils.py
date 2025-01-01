@@ -1,6 +1,9 @@
 """Utilities for computing Lennard-Jones potentials and total potential energy."""
 
 from numba import njit
+import numpy as np
+from typing import List
+
 from distance_utils import compute_distance
 
 @njit
@@ -12,7 +15,8 @@ def LJ_potentials(epsilon: float, sigma: float, r: float, derivative: bool = Fal
         return 4 * epsilon * ((sigma / r) ** 12 - (sigma / r) ** 6)
 
 @njit
-def compute_potential(neighbor_lists, atoms_positions, box_size, cross_coefficients):
+def compute_potential(neighbor_lists: List[np.ndarray], atoms_positions: np.ndarray, 
+                      box_size: np.ndarray, cross_coefficients: np.ndarray) -> float:
     """Compute the potential energy by summing up all pair contributions."""
     total_atoms = atoms_positions.shape[0]
     energy_potential = 0.0
