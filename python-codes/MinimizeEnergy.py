@@ -3,12 +3,12 @@ from logger import log_simulation_data
 from force_utils import compute_force_vector
 from pot_utils import compute_potential
 
-from Measurements import Measurements
+from InitializeSimulation import InitializeSimulation
 import numpy as np
 import copy
 
 
-class MinimizeEnergy(Measurements):
+class MinimizeEnergy(InitializeSimulation):
     def __init__(self,
                 maximum_steps,
                 *args,

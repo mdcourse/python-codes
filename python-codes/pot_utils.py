@@ -27,5 +27,6 @@ def compute_potential(neighbor_lists: List[np.ndarray], atoms_positions: np.ndar
             epsilon_ij = cross_coefficients[1][atom_i]
             rij, _ = compute_distance(atoms_positions[atom_i], atoms_positions[atom_j], box_size)
             energy_potential += LJ_potentials(epsilon_ij, sigma_ij, rij)
+
     return energy_potential
 

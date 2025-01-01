@@ -12,7 +12,10 @@ def contact_matrix(positions: np.ndarray, cutoff: float, box: np.ndarray) -> np.
     for i in range(total_atoms - 1):
         for j in range(i + 1, total_atoms):
             diff = positions[i] - positions[j]  # raw distance vector between particles i and j
-            diff -= np.round(diff / box[:3]) * box[:3]  # minimum image convention
+            if box[2] == 0: # 2D
+                diff[:2] -= np.round(diff[:2] / box[:2]) * box[:2]  # minimum image convention in 2D
+            else: # 3D
+                diff -= np.round(diff / box[:3]) * box[:3]  # minimum image convention in 3D
             dist_sq = np.dot(diff, diff)  # squared distance between the two particles
             if dist_sq < cutoff ** 2:
                 matrix[i, j] = True  # the particle i is in contact with particle j

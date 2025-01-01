@@ -1,6 +1,7 @@
 import os
 import logging
 from pot_utils import compute_potential
+from meas_utils import calculate_pressure
 
 # Function to set up the logger
 def setup_logger(folder_name, overwrite=False):
@@ -57,7 +58,9 @@ def log_simulation_data(code):
             elif code.thermo_outputs == "Epot-MaxF":
                 logger.info(f"{code.step} {Epot.magnitude:.2f} {code.MaxF:.2f}")
             elif code.thermo_outputs == "Epot-press":
-                code.calculate_pressure()
-                press = code.pressure * code.ref_pressure  # Atm
+                # code.calculate_pressure()
+                pressure = calculate_pressure(code.atoms_positions, code.box_mda,
+                                              code.neighbor_lists, code.cross_coefficients, code.desired_temperature)
+                press = pressure * code.ref_pressure  # Atm
                 logger.info(f"{code.step} {Epot.magnitude:.2f} {press.magnitude:.2f}")
 

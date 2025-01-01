@@ -5,7 +5,7 @@ import os
 import time
 
 # Define atom number of each group
-nmb_1= 50
+nmb_1= 100
 # Define LJ parameters (sigma)
 sig_1 = 3*ureg.angstrom
 # Define LJ parameters (epsilon)
@@ -31,7 +31,7 @@ mc = MonteCarlo(
     epsilon=[eps_1], # kcal/mol
     sigma=[sig_1], # A
     atom_mass=[mss_1], # g/mol
-    box_dimensions=[L, L, L], # A
+    box_dimensions=[L, L], # A
     cut_off=rc,
     thermo_outputs="Epot-press",
     desired_temperature=T, # K

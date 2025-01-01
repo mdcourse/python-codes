@@ -3,14 +3,14 @@ from logger import log_simulation_data
 
 import numpy as np
 import copy
-from Measurements import Measurements
+from InitializeSimulation import InitializeSimulation
 from pot_utils import compute_potential
 
 import warnings
 warnings.filterwarnings('ignore')
 
 
-class MonteCarlo(Measurements):
+class MonteCarlo(InitializeSimulation):
     def __init__(self,
                 maximum_steps,
                 desired_temperature,
@@ -56,7 +56,11 @@ class MonteCarlo(Measurements):
             atom_id = np.random.randint(np.sum(self.number_atoms))
             # Move the chosen atom in a random direction
             # The maximum displacement is set by self.displace_mc
-            move = (np.random.random(3)-0.5)*self.displace_mc 
+            if self.box_mda[2] == 0:  # 2D case
+                move = (np.random.random(2) - 0.5) * self.displace_mc
+                move = np.append(move, 0.0)  # Pad with zero for the z-component
+            else:  # 3D case
+                move = (np.random.random(3) - 0.5) * self.displace_mc
             self.atoms_positions[atom_id] += move
             # Measure the potential energy of the new configuration
             trial_Epot = compute_potential(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
