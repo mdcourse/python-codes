@@ -23,7 +23,7 @@ init = InitializeSimulation(
     epsilon=[eps_1, eps_2], # kcal/mol
     sigma=[sig_1, sig_2], # A
     atom_mass=[mss_1, mss_2], # g/mol
-    box_dimensions=[L, L, L], # A
+    box_dimensions=[L, L], # A
     cut_off=rc,
 )
 

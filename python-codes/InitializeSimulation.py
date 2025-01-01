@@ -39,23 +39,29 @@ class InitializeSimulation(Prepare, Utilities):
         self.update_cross_coefficients()
 
     def define_box(self):
-        """Define the simulation box. Only 3D boxes are supported."""
+        """Define the simulation box. Supports both 2D and 3D boxes."""
 
-        # Optional: Check if the number of elements in box_dimensions is exactly 3
-        if len(self.box_dimensions) != 3:
-            raise ValueError("box_dimensions must have exactly three elements (for 3D).")
+        # Optional: Check if the number of elements in box_dimensions is 2 or 3
+        if len(self.box_dimensions) not in [2, 3]:
+            raise ValueError("box_dimensions must have exactly two or three elements.")
 
-        # Initialize a 3x2 array to hold the boundaries
+        # Ensure the box is 3D. If its it's 2D, then append a 0 along z
+        box_dimensions_3d = self.box_dimensions + [0] * (3 - len(self.box_dimensions))
+
+        # Loop through each dimension
         box_boundaries = np.zeros((3, 2))
-
-        # Loop through each dimension (x, y, z)
-        for dim, length in enumerate(self.box_dimensions):
-            box_boundaries[dim] = -length / 2, length / 2  # Set the min and max boundary for each dimension
-
+        for dim, length in enumerate(box_dimensions_3d):
+            box_boundaries[dim, 0] = -length / 2  # Set the min boundary
+            box_boundaries[dim, 1] = length / 2  # Set the max boundary
         self.box_boundaries = box_boundaries
-        box_size = self.box_boundaries[:, 1] - self.box_boundaries[:, 0]  # SG TOFIX Redundant !
+
+        # Create MDAnalysis box (Lx, Ly, Lz, 90, 90, 90)
         box_geometry = np.array([90, 90, 90])
-        self.box_size = np.array(box_size.tolist()+box_geometry.tolist())
+        self.box_mda = np.array(box_dimensions_3d + box_geometry.tolist())
+
+        # Optional: Validate box_mda length (should be 6)
+        if len(self.box_mda) != 6:
+            raise ValueError("box_mda has wrong length")
 
     def populate_box(self):
         """Populate the simulation box with atom positions."""
