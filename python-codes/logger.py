@@ -1,6 +1,6 @@
 import os
 import logging
-from utils_pot import compute_potential
+from utils_potentials import compute_potential
 from utils_meas import calculate_pressure
 
 # Function to set up the logger

@@ -4,7 +4,7 @@ from logger import log_simulation_data
 import numpy as np
 import copy
 from InitializeSimulation import InitializeSimulation
-from utils_pot import compute_potential
+from utils_potentials import compute_potential
 from utils_mc import calculate_Lambda
 
 import warnings

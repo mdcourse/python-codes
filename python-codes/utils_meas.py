@@ -1,8 +1,8 @@
 from numba import njit
 import numpy as np
 
-from distance_utils import compute_vector_matrix
-from force_utils import compute_force_matrix
+from utils_distance import compute_vector_matrix
+from utils_force import compute_force_matrix
 
 # @njit
 def calculate_pressure(atoms_positions, box_mda, neighbor_lists, cross_coefficients, temperature = None):
