@@ -1,6 +1,6 @@
-[submodule ".submodules/pyplot-perso"]
-        path = .submodules/pyplot-perso
+[submodule ".github/submodules/pyplot-perso"]
+        path = .github/submodules/pyplot-perso
         url = git@github.com:simongravelle/pyplot-perso.git
-[submodule ".submodules/mdcourse.github.io"]
-	path = .submodules/mdcourse.github.io
+[submodule ".github/submodules/mdcourse.github.io"]
+	path = .github/submodules/mdcourse.github.io
 	url = git@github.com:mdcourse/mdcourse.github.io.git
