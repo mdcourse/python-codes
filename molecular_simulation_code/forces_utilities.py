@@ -61,6 +61,6 @@ def compute_force_matrix(neighbor_lists: List[np.ndarray], atoms_positions: np.n
             
             # Update force matrix
             force_matrix[atom_i, atom_j] += fij_xyz * rij_xyz / rij
-            force_matrix[atom_j, atom_i] += fij_xyz * rij_xyz / rij
+            force_matrix[atom_j, atom_i] -= fij_xyz * rij_xyz / rij
     return force_matrix
 

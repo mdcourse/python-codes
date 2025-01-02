@@ -17,6 +17,7 @@ class TestMonteCarloSimulation(unittest.TestCase):
 
         ureg = UnitRegistry()
         
+        # Configuration A
         nmb_1= 50  # Define atom number
         sig_1 = 3 * ureg.angstrom  # Define LJ parameters (sigma)
         eps_1 = 0.1 * ureg.kcal/ureg.mol  # Define LJ parameters (epsilon)
@@ -24,23 +25,23 @@ class TestMonteCarloSimulation(unittest.TestCase):
         L = 20 * ureg.angstrom  # Define box size
         rc = 2.5 * sig_1  # Define cut_off
         T = 300 * ureg.kelvin  # Pick the desired temperature
-        displace_mc = sig_1/4  # choose the displace_mc
+        displace_mc = sig_1/2  # choose the displace_mc
 
         # Initialize the MonteCarlo object
         self.mc = MonteCarlo(
             ureg = ureg,
-            maximum_steps=100,
-            thermo_period=10,
-            dumping_period=10,
-            number_atoms=[nmb_1],
-            epsilon=[eps_1], # kcal/mol
-            sigma=[sig_1], # A
-            atom_mass=[mss_1], # g/mol
-            box_dimensions=[L, L, L], # A
-            cut_off=rc,
-            thermo_outputs="Epot-press",
-            desired_temperature=T, # K
-            neighbor=20,
+            maximum_steps = 10000,
+            thermo_period = 1000,
+            dumping_period = 1000,
+            number_atoms = [nmb_1],
+            epsilon = [eps_1],
+            sigma = [sig_1],
+            atom_mass = [mss_1],
+            box_dimensions = [L, L, L],
+            cut_off = rc,
+            thermo_outputs = "Epot-press",
+            desired_temperature = T,
+            neighbor = 20,
             displace_mc = displace_mc,
         )
 

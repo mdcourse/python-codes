@@ -1,0 +1,49 @@
+variable dump equal 5000
+variable thermo equal 5000
+variable steps equal 100000
+
+variable nmb_1 equal 50  # Define atom number
+variable sig_1 equal 3  # Define LJ parameters (sigma)
+variable eps_1 equal 0.1  # Define LJ parameters (epsilon)
+variable mss_1 equal 10  # Define atom mass        
+variable L equal 20  # Define box size
+variable rc equal 2.5*${sig_1}  # Define cut_off (angstrom)
+variable T equal 300  # Pick the desired temperature (kelvin)
+
+units real
+dimension 3
+atom_style atomic
+pair_style lj/cut ${rc}
+boundary p p p
+
+#read_data twoparticle.data
+
+variable L2 equal ${L}/2
+region myreg block -${L2} ${L2} -${L2} ${L2} -${L2} ${L2}
+create_box 1 myreg
+create_atoms 1 random ${nmb_1} 32141 myreg
+
+mass 1 ${mss_1}
+pair_coeff 1 1 ${eps_1} ${sig_1}
+
+velocity all create ${T} 4928459
+fix mynve all nve
+fix myber all temp/berendsen 300 300 100
+timestep 0.25
+
+thermo ${thermo}
+dump mydmp all custom ${dump} dump.lammpstrj id type x y z vx vy vz
+
+run ${steps}  # equilibration
+
+variable Epot equal pe
+variable Ekin equal ke
+variable Etot equal v_Epot+v_Ekin
+variable pressure equal press
+variable temperature equal temp
+fix myat1 all ave/time ${dump} 1 ${dump} v_Epot file Epot.dat
+fix myat2 all ave/time ${dump} 1 ${dump} v_Ekin file Ekin.dat
+fix myat3 all ave/time ${dump} 1 ${dump} v_Etot file Etot.dat
+fix myat4 all ave/time ${dump} 1 ${dump} v_pressure file pressure.dat
+fix myat5 all ave/time ${dump} 1 ${dump} v_temperature file temperature.dat
+run ${steps}
