@@ -13,6 +13,8 @@ def compute_potentials(epsilon: float, sigma: float, r: float, potential_type: s
             return epsilon  # use epsilon instead of infinite
         else:
             return 0.0  # Zero potential otherwise
+    else:
+        raise ValueError(f"Invalid potential_type: {potential_type}")
 
 @njit
 def compute_forces(epsilon: float, sigma: float, r: float, potential_type: str) -> float:
