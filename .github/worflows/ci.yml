@@ -3,7 +3,7 @@ name: Run Unit and Integration Tests with pytest
 on:
   push:
     branches:
-      - main  # You can set it to your default branch, or others like 'develop'
+      - main
   pull_request:
     branches:
       - main
