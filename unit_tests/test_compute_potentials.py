@@ -6,7 +6,9 @@ import unittest
 sys.path.append(os.path.abspath("../molecular_simulation_code"))
 from potentials_utilities import compute_potentials
 
+
 class TestComputePotentials(unittest.TestCase):
+    """Unit testing for compute_potentials()"""
     def test_lennard_jones_potential(self):
         epsilon = 1.0
         sigma = 1.0

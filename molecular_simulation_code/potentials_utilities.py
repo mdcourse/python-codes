@@ -21,5 +21,7 @@ def compute_forces(epsilon: float, sigma: float, r: float, potential_type: str) 
     """Compute the potential' derivative for a pair of atoms."""
     if potential_type == "LJ":  # Compute the derivative of the Lennard-Jones potential
         return 48 * epsilon * ((sigma / r) ** 12 - 0.5 * (sigma / r) ** 6) / r
-    elif potential_type == "HS":
-        return 0  # ill define
+    elif potential_type == "HS":   # Ill-defined, return 0
+        return 0
+    else:
+        raise ValueError(f"Invalid potential_type: {potential_type}")
