@@ -1,7 +1,7 @@
 from dumper import update_dump_file
 from logger import log_simulation_data
-from force_utils import compute_force_vector
-from pot_utils import compute_potential
+from utils_force import compute_force_vector
+from utils_pot import compute_potential
 
 from InitializeSimulation import InitializeSimulation
 import numpy as np
