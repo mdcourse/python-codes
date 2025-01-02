@@ -28,10 +28,11 @@ def compute_vector_matrix(atoms_positions: np.ndarray, box_size: np.ndarray) -> 
             rij_xyz[:, :2] = (np.remainder(atoms_positions[Ni, :2] - atoms_positions[:, :2]
                                            + box_size[:2] / 2.0, box_size[:2]) - box_size[:2] / 2.0)
             rij_matrix[Ni] = rij_xyz
+            rij_matrix[:, Ni] = -rij_xyz
     else:  # 3D
         for Ni in range(total_atoms - 1):
             rij_xyz = (np.remainder(atoms_positions[Ni] - atoms_positions
                                     + box_size / 2.0, box_size) - box_size / 2.0)
             rij_matrix[Ni] = rij_xyz
-
+            rij_matrix[:, Ni] = -rij_matrix[Ni]
     return rij_matrix

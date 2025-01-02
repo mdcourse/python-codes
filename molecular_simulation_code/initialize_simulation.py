@@ -1,7 +1,7 @@
 import os
 import numpy as np
-from Prepare import Prepare
-from Utilities import Utilities
+from prepare_simulation import Prepare
+from unit_conversion_utilities import Utilities
 
 
 class InitializeSimulation(Prepare, Utilities):

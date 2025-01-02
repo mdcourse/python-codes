@@ -3,7 +3,7 @@ from scipy import constants as cst
 from typing import List
 import pint
 
-from utils_unit import validate_units, nondimensionalize_single, nondimensionalize_array
+from unit_conversion_utilities import validate_units, nondimensionalize_single, nondimensionalize_array
 
 class Prepare:
     def __init__(self,
@@ -12,6 +12,7 @@ class Prepare:
                 epsilon: List[pint.Quantity],  # List - Kcal/mol
                 sigma: List[pint.Quantity],  # List - Angstrom
                 atom_mass: List[pint.Quantity],  # List - g/mol
+                potential_type: str = "LJ",  # Default value, explicitly typed as str
                 *args,
                 **kwargs):
         self.ureg = ureg
@@ -19,6 +20,8 @@ class Prepare:
         self.epsilon = epsilon
         self.sigma = sigma
         self.atom_mass = atom_mass
+        self.potential_type = potential_type
+
         super().__init__(*args, **kwargs)
 
         self.calculate_LJunits_prefactors()
