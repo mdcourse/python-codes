@@ -69,7 +69,14 @@ class MonteCarlo(InitializeSimulation):
             beta =  1/self.desired_temperature
             delta_E = trial_Epot-initial_Epot
             random_number = np.random.random() # random number between 0 and 1
-            acceptation_probability = np.min([1, np.exp(-beta*delta_E)])
+
+            if beta * delta_E > 700:
+                acceptation_probability = 0  # exp(-700) is effectively 0.
+            elif beta * delta_E < -700:  # Avoid overflow for large negative exponents
+                acceptation_probability = 1  # exp(-(-700)) is effectively infinite
+            else:
+                acceptation_probability = np.min([1, np.exp(-beta * delta_E)])
+
             if random_number <= acceptation_probability: # Accept new position
                 self.Epot = trial_Epot
                 self.successful_move += 1
@@ -116,7 +123,14 @@ class MonteCarlo(InitializeSimulation):
             beta =  1/self.desired_temperature
             delta_E = trial_Epot-initial_Epot
             random_number = np.random.random() # random number between 0 and 1
-            acceptation_probability = np.min([1, np.exp(-beta*delta_E)])
+
+            if beta * delta_E > 700:
+                acceptation_probability = 0  # exp(-700) is effectively 0.
+            elif beta * delta_E < -700:  # Avoid overflow for large negative exponents
+                acceptation_probability = 1  # exp(-(-700)) is effectively infinite
+            else:
+                acceptation_probability = np.min([1, np.exp(-beta * delta_E)])
+
             if random_number <= acceptation_probability: # Accept new position
                 self.Epot = trial_Epot
                 self.successful_swap += 1
