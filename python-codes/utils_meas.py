@@ -26,7 +26,8 @@ def compute_epot(neighbor_lists: List[np.ndarray], atoms_positions: np.ndarray,
     return energy_potential
 
 # @njit
-def compute_pressure(atoms_positions, box_mda, neighbor_lists, cross_coefficients, temperature = None):
+def compute_pressure(atoms_positions, box_mda, neighbor_lists,
+                     cross_coefficients, potential_type, temperature = None):
     """Evaluate p based on the Virial equation (Eq. 4.4.2 in Frenkel-Smit,
     Understanding molecular simulation: from algorithms to applications, 2002)"""
 
@@ -46,7 +47,8 @@ def compute_pressure(atoms_positions, box_mda, neighbor_lists, cross_coefficient
 
     # Compute the non-ideal contribution
     vector_matrix = compute_vector_matrix(atoms_positions, box_mda[:3])
-    force_matrix = compute_force_matrix(neighbor_lists, atoms_positions, box_mda, cross_coefficients)
+    force_matrix = compute_force_matrix(neighbor_lists, atoms_positions, box_mda,
+                                        cross_coefficients, potential_type)
 
     distances_forces = np.sum(force_matrix*vector_matrix)
     p_nonideal = distances_forces/(volume*dimension)

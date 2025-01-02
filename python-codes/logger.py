@@ -59,7 +59,7 @@ def log_simulation_data(code):
             elif code.thermo_outputs == "Epot-press":
                 pressure = compute_pressure(code.atoms_positions, code.box_mda,
                                               code.neighbor_lists, code.cross_coefficients,
-                                              code.desired_temperature)
+                                              code.potential_type, code.desired_temperature)
                 press = pressure * code.ref_pressure  # Atm
                 logger.info(f"{code.step} {Epot.magnitude:.2f} {press.magnitude:.2f}")
 
