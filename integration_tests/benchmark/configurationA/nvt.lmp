@@ -1,6 +1,8 @@
-variable dump equal 5000
-variable thermo equal 5000
-variable steps equal 100000
+variable dump equal 50000
+variable thermo equal 50000
+variable steps equal 1000000
+variable eqs equal 100000
+variable av equal ${dump}/10
 
 variable nmb_1 equal 50  # Define atom number
 variable sig_1 equal 3  # Define LJ parameters (sigma)
@@ -34,16 +36,17 @@ timestep 0.25
 thermo ${thermo}
 dump mydmp all custom ${dump} dump.lammpstrj id type x y z vx vy vz
 
-run ${steps}  # equilibration
+run ${eqs}  # equilibration
 
 variable Epot equal pe
 variable Ekin equal ke
 variable Etot equal v_Epot+v_Ekin
 variable pressure equal press
 variable temperature equal temp
-fix myat1 all ave/time ${dump} 1 ${dump} v_Epot file Epot.dat
-fix myat2 all ave/time ${dump} 1 ${dump} v_Ekin file Ekin.dat
-fix myat3 all ave/time ${dump} 1 ${dump} v_Etot file Etot.dat
-fix myat4 all ave/time ${dump} 1 ${dump} v_pressure file pressure.dat
-fix myat5 all ave/time ${dump} 1 ${dump} v_temperature file temperature.dat
+fix myat1 all ave/time 10 ${av} ${dump} v_Epot file Epot.dat
+fix myat2 all ave/time 10 ${av} ${dump} v_Ekin file Ekin.dat
+fix myat3 all ave/time 10 ${av} ${dump} v_Etot file Etot.dat
+fix myat4 all ave/time 10 ${av} ${dump} v_pressure file pressure.dat
+fix myat5 all ave/time 10 ${av} ${dump} v_temperature file temperature.dat
+
 run ${steps}
