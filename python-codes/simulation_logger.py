@@ -1,6 +1,6 @@
 import os
 import logging
-from utils_meas import compute_pressure, compute_epot
+from measurements_utilities import compute_pressure, compute_epot
 
 # Function to set up the logger
 def setup_logger(folder_name, overwrite=False):

@@ -1,9 +1,9 @@
-from dumper import update_dump_file
-from logger import log_simulation_data
-from utils_force import compute_force_vector
-from utils_meas import compute_epot
+from trajectory_dumper import update_dump_file
+from simulation_logger import log_simulation_data
+from forces_utilities import compute_force_vector
+from measurements_utilities import compute_epot
 
-from InitializeSimulation import InitializeSimulation
+from initialize_simulation import InitializeSimulation
 import numpy as np
 import copy
 

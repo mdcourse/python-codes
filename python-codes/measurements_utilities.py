@@ -2,10 +2,10 @@ from numba import njit
 import numpy as np
 from typing import List
 
-from utils_distance import compute_vector_matrix
-from utils_force import compute_force_matrix
-from utils_potentials import compute_potentials
-from utils_distance import compute_distance
+from distances_utilities import compute_vector_matrix
+from forces_utilities import compute_force_matrix
+from potentials_utilities import compute_potentials
+from distances_utilities import compute_distance
 
 
 @njit

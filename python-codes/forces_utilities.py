@@ -3,8 +3,8 @@ using Lennard-Jones potentials and periodic boundary conditions."""
 
 import numpy as np
 from numba import njit
-from utils_potentials import compute_forces
-from utils_distance import compute_distance
+from potentials_utilities import compute_forces
+from distances_utilities import compute_distance
 from typing import List
 
 

@@ -1,13 +1,13 @@
 import numpy as np
 
-from utils_contact import contact_matrix, compute_neighbor_lists
+from contacts_utilities import contact_matrix, compute_neighbor_lists
 
 
 class Utilities:
     def __init__(self,
-                *args,
-                **kwargs):
-        super().__init__(*args, **kwargs)
+                *args,  # SG: remove ? unnecessary unless you're planning to inherit from another class in the future
+                **kwargs):  # SG: remove ? unnecessary unless you're planning to inherit from another class in the future
+        super().__init__(*args, **kwargs)  # SG: remove ? unnecessary unless you're planning to inherit from another class in the future
 
     def update_neighbor_lists(self, force_update=False):
         """Update the neighbor lists based on contact analysis."""

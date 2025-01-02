@@ -1,11 +1,11 @@
-from dumper import update_dump_file
-from logger import log_simulation_data
+from trajectory_dumper import update_dump_file
+from simulation_logger import log_simulation_data
 
 import numpy as np
 import copy
-from InitializeSimulation import InitializeSimulation
-from utils_meas import compute_epot
-from utils_mc import calculate_Lambda
+from initialize_simulation import InitializeSimulation
+from measurements_utilities import compute_epot
+from monte_carlo_utilities import calculate_Lambda
 
 import warnings
 warnings.filterwarnings('ignore')

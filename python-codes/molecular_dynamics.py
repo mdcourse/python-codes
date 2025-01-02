@@ -1,5 +1,5 @@
 import numpy as np
-from InitializeSimulation import InitializeSimulation
+from initialize_simulation import InitializeSimulation
 
 
 class MolecularDynamics(InitializeSimulation):
