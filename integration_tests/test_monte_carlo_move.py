@@ -25,12 +25,12 @@ class TestMonteCarloSimulation(unittest.TestCase):
         L = 20 * ureg.angstrom  # Define box size
         rc = 2.5 * sig_1  # Define cut_off
         T = 300 * ureg.kelvin  # Pick the desired temperature
-        displace_mc = sig_1/2  # choose the displace_mc
+        displace_mc = sig_1/4  # choose the displace_mc
 
         # Initialize the MonteCarlo object
         self.mc = MonteCarlo(
             ureg = ureg,
-            maximum_steps = 10000,
+            maximum_steps = 50000,
             thermo_period = 1000,
             dumping_period = 1000,
             number_atoms = [nmb_1],
