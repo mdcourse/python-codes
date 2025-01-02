@@ -5,6 +5,7 @@ import numpy as np
 from numba import njit
 from typing import Tuple
 
+
 @njit
 def compute_distance(position_i: np.ndarray, positions_j: np.ndarray, box: np.ndarray) -> Tuple[float, np.ndarray]:
     """Measure the distances between a single atom and its neighbors, taking into account periodic boundary conditions."""

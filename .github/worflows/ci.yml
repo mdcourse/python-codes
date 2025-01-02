@@ -29,6 +29,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Change to the integration_tests directory
+      - name: Change directory to integration_tests
+        run: cd integration_tests
+
       # Run the tests with pytest
       - name: Run tests with pytest
         run: |

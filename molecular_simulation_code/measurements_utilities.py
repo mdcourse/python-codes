@@ -10,8 +10,8 @@ from distances_utilities import compute_distance
 
 @njit
 def compute_epot(neighbor_lists: List[np.ndarray], atoms_positions: np.ndarray, 
-                      box_size: np.ndarray, cross_coefficients: np.ndarray,
-                      potential_type: str = "LJ") -> float:
+                 box_size: np.ndarray, cross_coefficients: np.ndarray,
+                 potential_type: str = "LJ") -> float:
     """Compute the potential energy by summing up all pair contributions."""
     total_atoms = atoms_positions.shape[0]
     energy_potential = 0.0
