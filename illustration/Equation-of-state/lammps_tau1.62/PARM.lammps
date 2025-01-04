@@ -1,6 +1,0 @@
-# LAMMPS parameter file 
-
-mass 1 39.948
-
-pair_coeff 1 1 0.237987582014826 3.4050149007323767
-
