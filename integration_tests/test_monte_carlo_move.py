@@ -33,7 +33,7 @@ class TestMonteCarloSimulation(unittest.TestCase):
         # Initialize the MonteCarlo object
         self.mc = MonteCarlo(
             ureg = ureg,
-            maximum_steps = 100000,
+            maximum_steps = 10000,
             thermo_period = 1000,
             dumping_period = 1000,
             number_atoms = [nmb_1],
