@@ -9,8 +9,10 @@ def setup_logger(folder_name, overwrite=False):
     logger.setLevel(logging.INFO)
     logger.propagate = False  # Disable propagation to prevent double logging
 
-    # Clear any existing handlers if this function is called again
+    # Close and clear existing handlers, if any
     if logger.hasHandlers():
+        for handler in logger.handlers:
+            handler.close()  # Ensure handlers are properly closed
         logger.handlers.clear()
 
     # Create handlers for console and file

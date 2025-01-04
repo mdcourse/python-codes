@@ -1,4 +1,5 @@
 import numpy as np
+from numba.typed import List
 
 from contacts_utilities import contact_matrix, compute_neighbor_lists
 
@@ -18,7 +19,12 @@ class Utilities:
                                     box=self.box_mda)
 
             # Compute the neighbor lists from the contact matrix
-            self.neighbor_lists = compute_neighbor_lists(matrix)
+            python_neighbor_lists = compute_neighbor_lists(matrix)
+
+            # Convert Python list to numba.typed.List
+            self.neighbor_lists = List()
+            for neighbors in python_neighbor_lists:
+                self.neighbor_lists.append(neighbors)
 
     def update_cross_coefficients(self, force_update=False):
         """Update the Lennard-Jones cross-coefficients for all atom pairs."""

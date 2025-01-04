@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import unittest
 import numpy as np
 from pint import UnitRegistry
@@ -41,7 +42,7 @@ class TestMonteCarloSimulation(unittest.TestCase):
             cut_off = rc,
             thermo_outputs = "Epot-press",
             desired_temperature = T,
-            neighbor = 20,
+            neighbor = 50,
             displace_mc = displace_mc,
         )
 
@@ -49,8 +50,11 @@ class TestMonteCarloSimulation(unittest.TestCase):
         """Test if the Monte Carlo simulation runs without errors."""
         try:
             # Run the Monte Carlo simulation (this should not raise an exception)
+            ti = time.time()
             self.mc.run()
             # If it runs successfully, assert True
+            tf = time.time()
+            print("Duration:", np.round(tf-ti, 2), "s")
             self.assertTrue(True)
         except Exception as e:
             # If any exception occurs, fail the test and print the error

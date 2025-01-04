@@ -1,6 +1,6 @@
 from numba import njit
 import numpy as np
-from typing import List
+from numba.typed import List
 
 from distances_utilities import compute_vector_matrix
 from forces_utilities import compute_force_matrix
