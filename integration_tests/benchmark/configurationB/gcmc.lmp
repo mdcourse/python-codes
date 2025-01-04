@@ -11,7 +11,9 @@ variable mss_1 equal 10  # Define atom mass
 variable L equal 20  # Define box size
 variable rc equal 2.5*${sig_1}  # Define cut_off (angstrom)
 variable T equal 300  # Pick the desired temperature (kelvin)
+variable mu equal -4 
 
+# main parameters
 units real
 dimension 3
 atom_style atomic
@@ -21,30 +23,23 @@ boundary p p p
 variable L2 equal ${L}/2
 region myreg block -${L2} ${L2} -${L2} ${L2} -${L2} ${L2}
 create_box 1 myreg
-create_atoms 1 random ${nmb_1} 32141 myreg
+create_atoms 1 random ${nmb_1} 14141 myreg
 
 mass 1 ${mss_1}
 pair_coeff 1 1 ${eps_1} ${sig_1}
 
-velocity all create ${T} 4928459
-fix mynve all nve
-fix myber all temp/berendsen 300 300 100
-timestep 0.25
+timestep 0.1
+fix mygcmc all gcmc 1 1 0 1 29494 ${T} ${mu} 0.01
 
 thermo ${thermo}
 dump mydmp all custom ${dump} dump.lammpstrj id type x y z vx vy vz
 
 run ${eqs}  # equilibration
 
-variable Epot equal pe
-variable Ekin equal ke
-variable Etot equal v_Epot+v_Ekin
-variable pressure equal press
-variable temperature equal temp
-fix myat1 all ave/time 10 ${av} ${dump} v_Epot file Epot.dat
-fix myat2 all ave/time 10 ${av} ${dump} v_Ekin file Ekin.dat
-fix myat3 all ave/time 10 ${av} ${dump} v_Etot file Etot.dat
-fix myat4 all ave/time 10 ${av} ${dump} v_pressure file pressure.dat
-fix myat5 all ave/time 10 ${av} ${dump} v_temperature file temperature.dat
+variable atom atom "type==1"
+group atom dynamic all var atom
+variable n_atom equal count(atom)
+variable density equal v_n_atom/vol
+fix myat1 all ave/time 10 ${av} ${dump} v_density file density.dat
 
 run ${steps}
