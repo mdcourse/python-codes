@@ -7,7 +7,7 @@
 This repository contains the Python code associated with
 the [Learn Molecular Simulations with Python](https://mdcourse.github.io/)
 project. The most recent version of the code is located in
-the [python-codes/](python-codes/) folder.
+the [molecular_simulation_code/](molecular_simulation_code/) folder.
 
 ### Acknowledgments and license
 
