@@ -6,6 +6,7 @@ import copy
 from initialize_simulation import InitializeSimulation
 from measurements_utilities import compute_epot
 from monte_carlo_utilities import calculate_Lambda
+# from numba_test import numba_copy
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -52,7 +53,9 @@ class MonteCarlo(InitializeSimulation):
                 self.Epot = compute_epot(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
             # Make a copy of the initial atom positions and initial energy
             initial_Epot = self.Epot
-            initial_positions = copy.deepcopy(self.atoms_positions)
+            # initial_positions = copy.deepcopy(self.atoms_positions)
+            # initial_positions = np.copy(self.atoms_positions)
+            # initial_positions = numba_copy(self.atoms_positions)
             # Pick an atom id randomly
             atom_id = np.random.randint(np.sum(self.number_atoms))
             # Move the chosen atom in a random direction
@@ -62,9 +65,12 @@ class MonteCarlo(InitializeSimulation):
                 move = np.append(move, 0.0)  # Pad with zero for the z-component
             else:  # 3D case
                 move = (np.random.random(3) - 0.5) * self.displace_mc
+            initial_position_atom = np.copy(self.atoms_positions[atom_id])
             self.atoms_positions[atom_id] += move
+
             # Measure the potential energy of the new configuration
             trial_Epot = compute_epot(self.neighbor_lists, self.atoms_positions, self.box_mda, self.cross_coefficients)
+
             # Evaluate whether the new configuration should be kept or not
             beta =  1/self.desired_temperature
             delta_E = trial_Epot-initial_Epot
@@ -81,7 +87,8 @@ class MonteCarlo(InitializeSimulation):
                 self.Epot = trial_Epot
                 self.successful_move += 1
             else: # Reject new position
-                self.atoms_positions = initial_positions # Revert to initial positions
+                self.atoms_positions[atom_id] = initial_position_atom
+                # self.atoms_positions = initial_positions # Revert to initial positions
                 self.failed_move += 1
 
     def monte_carlo_swap(self):
