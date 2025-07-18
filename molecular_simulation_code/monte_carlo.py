@@ -6,7 +6,6 @@ import copy
 from initialize_simulation import InitializeSimulation
 from measurements_utilities import compute_epot
 from monte_carlo_utilities import calculate_Lambda
-# from numba_test import numba_copy
 
 import warnings
 warnings.filterwarnings('ignore')

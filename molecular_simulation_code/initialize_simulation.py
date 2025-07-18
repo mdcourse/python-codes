@@ -9,7 +9,7 @@ class InitializeSimulation(Prepare, Utilities):
                 box_dimensions,  # List - Angstroms
                 cut_off, # Angstroms
                 initial_positions=None,  # Array - Angstroms
-                neighbor=1, # Integer
+                neighbor=1, # Integer - frequency for neighbor list rebuild
                 thermo_period = None,
                 dumping_period = None,
                 thermo_outputs = None,
