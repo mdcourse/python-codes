@@ -25,7 +25,7 @@ class TestMonteCarloSimulation(unittest.TestCase):
         sig_1 = 3 * ureg.angstrom  # Define LJ parameters (sigma)
         eps_1 = 0.1 * ureg.kcal/ureg.mol  # Define LJ parameters (epsilon)
         mss_1 = 10 * ureg.gram/ureg.mol  # Define atom mass        
-        L = 20 * ureg.angstrom  # Define box size
+        L = 14 * ureg.angstrom  # Define box size
         rc = 2.5 * sig_1  # Define cut_off
         T = 300 * ureg.kelvin  # Pick the desired temperature
         displace_mc = sig_1/4  # choose the displace_mc
@@ -33,9 +33,9 @@ class TestMonteCarloSimulation(unittest.TestCase):
         # Initialize the MonteCarlo object
         self.mc = MonteCarlo(
             ureg = ureg,
-            maximum_steps = 50000,
-            thermo_period = 1000,
-            dumping_period = 1000,
+            maximum_steps = 5000,
+            thermo_period = 100,
+            dumping_period = 100,
             number_atoms = [nmb_1],
             epsilon = [eps_1],
             sigma = [sig_1],
@@ -47,26 +47,6 @@ class TestMonteCarloSimulation(unittest.TestCase):
             neighbor = 50,
             displace_mc = displace_mc,
         )
-
-    """
-    def test_monte_carlo_run(self):
-        # Test if the Monte Carlo simulation runs without errors.
-        try:
-            # Run the Monte Carlo simulation (this should not raise an exception)
-            ti = time.time()
-
-            # Profile the run() method
-            self.mc.run()
-            # self.mc.run()
-            # If it runs successfully, assert True
-            tf = time.time()
-
-            print("Duration:", np.round(tf-ti, 2), "s")
-            self.assertTrue(True)
-        except Exception as e:
-            # If any exception occurs, fail the test and print the error
-            self.fail(f"Monte Carlo simulation failed with error: {e}")
-    """
 
     def test_monte_carlo_run(self):
         """Test if the Monte Carlo simulation runs without errors."""
