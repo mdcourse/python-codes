@@ -1,7 +1,8 @@
 import numpy as np
 from numba.typed import List
 
-from contacts_utilities import contact_matrix, compute_neighbor_lists
+# from contacts_utilities import contact_matrix, compute_neighbor_lists
+from contacts_utilities import compute_neighbor_lists
 
 
 class Utilities:
@@ -13,20 +14,13 @@ class Utilities:
     def update_neighbor_lists(self, force_update=False):
         """Update the neighbor lists based on contact analysis."""
         if (self.step % self.neighbor == 0) or force_update:  # Check if an update is needed
-            # Compute the contact matrix based on current particle positions
-            matrix = contact_matrix(self.atoms_positions,
-                                    cutoff=self.cut_off,
-                                    box=self.box_mda)
 
             # Compute the neighbor lists from the contact matrix
-            python_neighbor_lists = compute_neighbor_lists(matrix)
+            self.neighbor_lists = compute_neighbor_lists(self.positions,
+                                                           self.cut_off,
+                                                           self.box_mda)
 
-            # Convert Python list to numba.typed.List
-            self.neighbor_lists = List()
-            for neighbors in python_neighbor_lists:
-                self.neighbor_lists.append(neighbors)
-
-    def update_cross_coefficients(self, force_update=False):
+    def _update_cross_coefficients(self, force_update=False):
         """Update the Lennard-Jones cross-coefficients for all atom pairs."""
         # Check if an update is necessary
         if (self.step % self.neighbor == 0) or force_update:
@@ -58,6 +52,43 @@ class Utilities:
                 
                 # Store the cross-coefficients as a 2D NumPy array
                 self.cross_coefficients = np.array([sigma_ijs, epsilon_ijs])
+
+    def update_cross_coefficients(self, force_update=False):
+        """Update the Lennard-Jones cross-coefficients for all atom pairs."""
+
+        if (self.step % self.neighbor == 0) or force_update:
+
+            N = np.sum(self.number_atoms)
+            atom_types = self.atom_types
+            sigma_matrix = self.sigmas
+            epsilon_matrix = self.epsilons
+            neighbor_lists = self.neighbor_lists
+
+            # Lists of lists to hold σ_ij and ε_ij for each atom
+            sigma_ijs = []
+            epsilon_ijs = []
+
+            for i in range(N):
+                type_i = atom_types[i]
+                neighbors_i = neighbor_lists[i]
+
+                sigma_i_list = []
+                epsilon_i_list = []
+
+                for j in neighbors_i:
+                    type_j = atom_types[j]
+
+                    sigma_ij = sigma_matrix[type_i-1, type_j-1]
+                    epsilon_ij = epsilon_matrix[type_i-1, type_j-1]
+
+                    sigma_i_list.append(sigma_ij)
+                    epsilon_i_list.append(epsilon_ij)
+
+                sigma_ijs.append(np.array(sigma_i_list))
+                epsilon_ijs.append(np.array(epsilon_i_list))
+
+            self.cross_sigmas = sigma_ijs
+            self.cross_epsilons = epsilon_ijs
 
     def wrap_in_box(self):
         """Wrap particle positions into the simulation box."""

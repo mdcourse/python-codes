@@ -17,15 +17,16 @@ class Prepare:
         self.ureg = ureg
 
         masses, epsilons, sigmas = read_inc_file(parameter_file, ureg)
-        number_atoms, atom_ids, atom_types, positions_array, box_bounds = read_data_file(data_file, ureg)
+        number_atoms, atom_ids, atom_types, positions, box_bounds = read_data_file(data_file, ureg)
 
         self.masses = masses
         self.epsilons = epsilons
         self.sigmas = sigmas
         self.atom_ids = atom_ids
         self.atom_types = atom_types
-        self.positions = positions_array
+        self.positions = positions
         self.box_bounds = box_bounds
+
         self.number_atoms = number_atoms
 
         self.potential_type = potential_type
@@ -36,6 +37,10 @@ class Prepare:
                                       "masses",
                                       "box_bounds",
                                       "positions"])
+        
+        box_geometry = np.array([90, 90, 90])
+        box_lengths = np.diff(self.box_bounds, axis=1).flatten()
+        self.box_mda = np.concatenate([box_lengths, box_geometry])
 
     @property
     def kB(self):

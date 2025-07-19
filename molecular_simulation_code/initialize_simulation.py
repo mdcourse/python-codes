@@ -1,10 +1,10 @@
 import os
 import numpy as np
 from prepare_simulation import Prepare
-# from simulation_handler import Utilities
+from simulation_handler import Utilities
 
 
-class InitializeSimulation(Prepare): # , Utilities):
+class InitializeSimulation(Prepare, Utilities):
     def __init__(self,
                 cut_off, # Angstroms
                 neighbor=1, # Integer - frequency for neighbor list rebuild
@@ -25,3 +25,5 @@ class InitializeSimulation(Prepare): # , Utilities):
         self.data_folder = data_folder
 
         self.nondimensionalize_units(["cut_off"])
+        self.update_neighbor_lists()
+        self.update_cross_coefficients()
