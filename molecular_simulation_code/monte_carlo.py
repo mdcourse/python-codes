@@ -64,14 +64,20 @@ class MonteCarlo(InitializeSimulation):
             # initial_positions = np.copy(self.atoms_positions)
             # initial_positions = numba_copy(self.atoms_positions)
             # Pick an atom id randomly
-            atom_id = np.random.randint(np.sum(self.number_atoms))
+
+            displace_mc = 0
+            while displace_mc == 0:
+                atom_id = np.random.randint(np.sum(self.number_atoms))
+                atom_type = self.atom_types[atom_id]
+                displace_mc = self.displace_mc[atom_type - 1]
+            
             # Move the chosen atom in a random direction
             # The maximum displacement is set by self.displace_mc
             if self.box_mda[2] == 0:  # 2D case
-                move = (np.random.random(2) - 0.5) * self.displace_mc
+                move = (np.random.random(2) - 0.5) * displace_mc
                 move = np.append(move, 0.0)  # Pad with zero for the z-component
             else:  # 3D case
-                move = (np.random.random(3) - 0.5) * self.displace_mc
+                move = (np.random.random(3) - 0.5) * displace_mc
             initial_position_atom = np.copy(self.positions[atom_id])
             self.positions[atom_id] += move
 
