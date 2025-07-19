@@ -5,35 +5,13 @@ import numpy as np
 def read_inc_file(
     filepath: str,
     ureg: pint.UnitRegistry
-) -> tuple[List[pint.Quantity], List[pint.Quantity], List[pint.Quantity]]:
+) -> tuple[dict[str, pint.Quantity], dict[tuple[str, str], pint.Quantity], dict[tuple[str, str], pint.Quantity]]:
     """
-    Parse a LAMMPS-style `.inc` parameter file and return lists of mass, epsilon, and sigma
-    in the order the species are first encountered in the file.
-
-    The function expects the `.inc` file to contain lines of the form:
-
-        mass <species> <value>
-        pair_coeff <species1> <species2> <epsilon> <sigma>
-
-    - `mass` lines define the mass of each species in g/mol.
-    - `pair_coeff` lines define Lennard-Jones parameters (epsilon in kcal/mol, sigma in Ångström)
-      for each pair of species. Only the diagonal terms (`species-species`) are used.
-
-    Comment lines starting with `#` and blank lines are ignored.
-    The output lists are ordered by the order of first `mass` appearances in the file.
-
-    Args:
-        filepath: Path to `.inc` parameter file.
-        ureg: pint.UnitRegistry to assign units to the parsed quantities.
-
-    Returns:
-        atom_mass_list: list of pint.Quantity for species masses (g/mol)
-        epsilon_list: list of pint.Quantity for species epsilon (kcal/mol)
-        sigma_list: list of pint.Quantity for species sigma (Ångström)
+    Parse a LAMMPS-style `.inc` parameter file and return dicts of mass, epsilon, and sigma.
     """
-    species_order = []
-    masses = {}
-    pair_coeffs = {}
+    masses_dict = {}
+    epsilons_dict = {}
+    sigmas_dict = {}
 
     with open(filepath, 'r') as f:
         for line in f:
@@ -42,49 +20,73 @@ def read_inc_file(
                 continue
 
             if tokens[0] == "mass":
-                elem, val = tokens[1], float(tokens[2])
-                if elem not in species_order:
-                    species_order.append(elem)
-                masses[elem] = val * ureg.g / ureg.mol
+                species, val = tokens[1], float(tokens[2])
+                masses_dict[species] = val * ureg.g / ureg.mol
 
             elif tokens[0] == "pair_coeff":
-                elem1, elem2 = tokens[1], tokens[2]
+                species1, species2 = tokens[1], tokens[2]
                 epsilon, sigma = float(tokens[3]), float(tokens[4])
-                pair_coeffs[(elem1, elem2)] = (
-                    epsilon * ureg.kcal / ureg.mol,
-                    sigma * ureg.angstrom
-                )
+                epsilons_dict[(species1, species2)] = epsilon * ureg.kcal / ureg.mol
+                sigmas_dict[(species1, species2)] = sigma * ureg.angstrom
 
-    return masses, pair_coeffs
+    N = len(masses_dict)
+    masses_array = np.zeros(N, dtype=object)
+    epsilons_array = np.zeros((N, N), dtype=object)
+    sigmas_array = np.zeros((N, N), dtype=object)
+
+    for idx in range(1, N+1):
+        masses_array[idx-1] = masses_dict[str(idx)]
+
+    for i in range(1, N+1):
+        for j in range(1, N+1):
+            key = (str(i), str(j))
+            key_sym = (str(j), str(i))
+            if key in epsilons_dict:
+                epsilons_array[i-1, j-1] = epsilons_dict[key]
+                sigmas_array[i-1, j-1] = sigmas_dict[key]
+            elif key_sym in epsilons_dict:
+                epsilons_array[i-1, j-1] = epsilons_dict[key_sym]
+                sigmas_array[i-1, j-1] = sigmas_dict[key_sym]
+
+    return masses_array, epsilons_array, sigmas_array
+
+from typing import Tuple, List
+import numpy as np
 
 def read_data_file(
     filepath: str
-) -> Tuple[List[int], np.ndarray]:
+) -> Tuple[List[int], List[int], np.ndarray, np.ndarray]:
     """
-    Read a LAMMPS-style `.data` file and return atom types and positions.
+    Read a LAMMPS-style `.data` file and return atom IDs, types, positions, and box bounds.
 
     The function expects the `.data` file to follow the standard LAMMPS
-    `write_data` output format, where the `Atoms` section looks like:
-
-        Atoms
-
+    `write_data` output format. In particular:
+    
+    - 3 lines of box boundaries:
+        xlo xhi
+        ylo yhi
+        zlo zhi
+    - An `Atoms` section:
         atom-ID  atom-type  x  y  z  [other optional flags …]
 
-    Only the atom-type (column 2) and x, y, z coordinates (columns 3-5)
-    are extracted. Additional columns in the `Atoms` section are ignored.
+    Only the atom-ID, atom-type, and x,y,z coordinates are extracted.
+    Additional columns in the `Atoms` section are ignored.
     Parsing stops when another section (e.g., `Velocities`) is encountered.
 
     Args:
         filepath: Path to LAMMPS `.data` file
 
     Returns:
-        atom_types: list of integers, atom type for each atom
-        positions: (Nx3) NumPy array of atom positions (floats)
+        atom_ids: list of atom IDs (integers, in file order)
+        atom_types: list of atom types (integers, in file order)
+        positions: (N, 3) NumPy array of positions (floats)
+        box_bounds: (3, 2) NumPy array of box bounds: [[xlo, xhi], [ylo, yhi], [zlo, zhi]]
     """
     in_atoms_section = False
     atom_types = []
     atom_ids = []
     positions = []
+    box_bounds = np.zeros((3, 2))
 
     with open(filepath, 'r') as f:
         for line in f:
@@ -92,16 +94,28 @@ def read_data_file(
             if not line or line.startswith("#"):
                 continue
 
+            tokens = line.split()
+
+            # Parse box boundaries
+            if len(tokens) == 4 and tokens[2] in {"xlo", "ylo", "zlo"} and tokens[3] in {"xhi", "yhi", "zhi"}:
+                idx = {"xlo": 0, "ylo": 1, "zlo": 2}[tokens[2]]
+                box_bounds[idx, 0] = float(tokens[0])
+                box_bounds[idx, 1] = float(tokens[1])
+                continue
+
             if line.lower().startswith("atoms"):
                 in_atoms_section = True
                 continue
 
-            if line.lower().startswith("velocities") or line.lower().startswith("bonds") or line.lower().startswith("angles"):
+            if in_atoms_section and (
+                line.lower().startswith("velocities") or 
+                line.lower().startswith("bonds") or 
+                line.lower().startswith("angles")
+            ):
                 in_atoms_section = False
                 continue
 
             if in_atoms_section:
-                tokens = line.split()
                 atom_id = int(tokens[0])
                 atom_type = int(tokens[1])
                 x, y, z = map(float, tokens[2:5])
@@ -111,4 +125,8 @@ def read_data_file(
                 positions.append([x, y, z])
 
     positions_array = np.array(positions)
-    return atom_ids, atom_types, positions_array
+    _, counts = np.unique(atom_types, return_counts=True)
+    number_atoms = counts.tolist()
+
+    return number_atoms, atom_ids, atom_types, positions_array, box_bounds
+

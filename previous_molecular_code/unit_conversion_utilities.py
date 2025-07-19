@@ -15,18 +15,5 @@ def nondimensionalize_single(value: pint.Quantity, ref_value: pint.Quantity) -> 
     return (value / ref_value).magnitude
 
 def nondimensionalize_array(array: np.ndarray, ref_value: pint.Quantity) -> np.ndarray:
-    """
-    Nondimensionalize a numpy array of pint.Quantity elements.
-    Returns a float array with the same shape.
-    """
-    # Allocate output array
-    result = np.empty(array.shape, dtype=float)
-
-    # Iterate and compute
-    it = np.nditer(array, flags=['multi_index', 'refs_ok'])
-    while not it.finished:
-        q = it[0].item()
-        result[it.multi_index] = (q / ref_value).magnitude
-        it.iternext()
-
-    return result
+    """Nondimensionalize a NumPy array."""
+    return (array / ref_value).magnitude

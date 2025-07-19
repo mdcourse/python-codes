@@ -1,4 +1,3 @@
-# LAMMPS include file
 
 mass 1 15.9994
 mass 2 1.008
