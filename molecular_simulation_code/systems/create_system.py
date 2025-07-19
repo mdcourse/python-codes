@@ -82,23 +82,27 @@ def write_lammps_inc(filename, masses, pair_coeffs):
 
 if __name__ == "__main__":
     # Example parameters
-    box_dimensions = [20, 20, 20]      # in whatever units you want
-    n_atoms = 500
+    box_dimensions = [25, 25, 25]      # in whatever units you want
+    n_atoms = 200
     n_types = 2
-    masses = {1: 15.9994, 2: 1.008}
+    masses = {1: 12, 2: 28}
 
     # Pair coefficients: {(type_i, type_j): (epsilon, sigma)}
     pair_coeffs = {
-        (1, 1): (0.185199, 3.1589),
-        (2, 2): (0.0, 1.0),
-        (1, 2): (0.0, 1.0),
+        (1, 1): (0.1, 3),
+        (2, 2): (0.01, 4),
+        (1, 2): (0.03, 3.5),
     }
+
+    # estimate rho
+    rho_star = (n_atoms / np.prod(box_dimensions)) * 3**3
+    print("Reduced LJ density (rho*) =", rho_star)
 
     # Define box
     box_boundaries, box_mda = define_box(box_dimensions)
 
     # Populate box randomly
-    atoms = populate_box(box_boundaries, n_atoms, n_types, type_fractions=[0.8, 0.2])
+    atoms = populate_box(box_boundaries, n_atoms, n_types, type_fractions=[0.9, 0.1])
 
     # Write files
     write_lammps_data("topology.data", box_boundaries, masses, atoms)
