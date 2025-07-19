@@ -2,10 +2,7 @@ import pint
 from typing import Tuple, List
 import numpy as np
 
-def read_inc_file(
-    filepath: str,
-    ureg: pint.UnitRegistry
-) -> tuple[dict[str, pint.Quantity], dict[tuple[str, str], pint.Quantity], dict[tuple[str, str], pint.Quantity]]:
+def read_inc_file( filepath: str, ureg: pint.UnitRegistry):
     """
     Parse a LAMMPS-style `.inc` parameter file and return dicts of mass, epsilon, and sigma.
     """
@@ -50,37 +47,9 @@ def read_inc_file(
 
     return masses_array, epsilons_array, sigmas_array
 
-from typing import Tuple, List
-import numpy as np
-
-def read_data_file(
-    filepath: str
-) -> Tuple[List[int], List[int], np.ndarray, np.ndarray]:
+def read_data_file(filepath: str, ureg: pint.UnitRegistry):
     """
     Read a LAMMPS-style `.data` file and return atom IDs, types, positions, and box bounds.
-
-    The function expects the `.data` file to follow the standard LAMMPS
-    `write_data` output format. In particular:
-    
-    - 3 lines of box boundaries:
-        xlo xhi
-        ylo yhi
-        zlo zhi
-    - An `Atoms` section:
-        atom-ID  atom-type  x  y  z  [other optional flags …]
-
-    Only the atom-ID, atom-type, and x,y,z coordinates are extracted.
-    Additional columns in the `Atoms` section are ignored.
-    Parsing stops when another section (e.g., `Velocities`) is encountered.
-
-    Args:
-        filepath: Path to LAMMPS `.data` file
-
-    Returns:
-        atom_ids: list of atom IDs (integers, in file order)
-        atom_types: list of atom types (integers, in file order)
-        positions: (N, 3) NumPy array of positions (floats)
-        box_bounds: (3, 2) NumPy array of box bounds: [[xlo, xhi], [ylo, yhi], [zlo, zhi]]
     """
     in_atoms_section = False
     atom_types = []
@@ -124,7 +93,8 @@ def read_data_file(
                 atom_types.append(atom_type)
                 positions.append([x, y, z])
 
-    positions_array = np.array(positions)
+    box_bounds = box_bounds * ureg.angstroms
+    positions_array = np.array(positions) * ureg.angstroms
     _, counts = np.unique(atom_types, return_counts=True)
     number_atoms = counts.tolist()
 

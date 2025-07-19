@@ -17,7 +17,7 @@ class Prepare:
         self.ureg = ureg
 
         masses, epsilons, sigmas = read_inc_file(parameter_file, ureg)
-        number_atoms, atom_ids, atom_types, positions_array, box_bounds = read_data_file(data_file)
+        number_atoms, atom_ids, atom_types, positions_array, box_bounds = read_data_file(data_file, ureg)
 
         self.masses = masses
         self.epsilons = epsilons
@@ -31,7 +31,11 @@ class Prepare:
         self.potential_type = potential_type
 
         self.calculate_LJunits_prefactors()
-        self.nondimensionalize_units(["epsilons", "sigmas", "masses"])
+        self.nondimensionalize_units(["epsilons",
+                                      "sigmas",
+                                      "masses",
+                                      "box_bounds",
+                                      "positions"])
 
     @property
     def kB(self):
