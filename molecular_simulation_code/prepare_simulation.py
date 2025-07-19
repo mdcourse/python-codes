@@ -4,22 +4,29 @@ from typing import List
 import pint
 
 from unit_conversion_utilities import validate_units, nondimensionalize_single, nondimensionalize_array
+from file_parsers import read_data_file, read_inc_file
 
 class Prepare:
     def __init__(self,
                 ureg: pint.UnitRegistry,  # Pint unit registry
-                number_atoms: List[int],  # List - no unit integer
-                epsilon: List[pint.Quantity],  # List - Kcal/mol
-                sigma: List[pint.Quantity],  # List - Angstrom
-                atom_mass: List[pint.Quantity],  # List - g/mol
+                file_data_path: str,
+                file_inc_path: str,
                 potential_type: str = "LJ",  # Default value, explicitly typed as str
                 *args,
                 **kwargs):
         self.ureg = ureg
+
+        atom_types, _ = read_data_file(file_data_path)
+        atom_mass_list, epsilon_list, sigma_list = read_inc_file(file_inc_path, ureg)
+
+        unique, counts = np.unique(atom_types, return_counts=True)
+        number_atoms = counts.tolist()
+
         self.number_atoms = number_atoms
-        self.epsilon = epsilon
-        self.sigma = sigma
-        self.atom_mass = atom_mass
+        self.epsilon = epsilon_list
+        self.sigma = sigma_list
+        self.atom_mass = atom_mass_list
+
         self.potential_type = potential_type
 
         super().__init__(*args, **kwargs)

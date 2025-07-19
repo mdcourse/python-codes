@@ -2,7 +2,7 @@ import pint
 from typing import Tuple, List
 import numpy as np
 
-def read_lammps_inc_file(
+def read_inc_file(
     filepath: str,
     ureg: pint.UnitRegistry
 ) -> tuple[List[pint.Quantity], List[pint.Quantity], List[pint.Quantity]]:
@@ -57,7 +57,7 @@ def read_lammps_inc_file(
 
     return masses, pair_coeffs
 
-def read_lammps_data_file(
+def read_data_file(
     filepath: str
 ) -> Tuple[List[int], np.ndarray]:
     """

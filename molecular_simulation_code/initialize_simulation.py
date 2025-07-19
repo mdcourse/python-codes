@@ -55,7 +55,7 @@ class InitializeSimulation(Prepare, Utilities):
             box_boundaries[dim, 1] = length / 2  # Set the max boundary
         self.box_boundaries = box_boundaries
 
-        # Create MDAnalysis box (Lx, Ly, Lz, 90, 90, 90)
+        # Create MDAnalysis-type box (Lx, Ly, Lz, 90, 90, 90)
         box_geometry = np.array([90, 90, 90])
         self.box_mda = np.array(box_dimensions_3d + box_geometry.tolist())
 
