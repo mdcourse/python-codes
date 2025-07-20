@@ -13,7 +13,7 @@ class TestComputePotentials(unittest.TestCase):
         epsilon = 1.0
         sigma = 1.0
         r = 1.5
-        potential_type = "LJ"
+        potential_type = 0 # LJ
         
         expected = 4 * epsilon * ((sigma / r) ** 12 - (sigma / r) ** 6)
         result = compute_potentials(epsilon, sigma, r, potential_type)
@@ -23,7 +23,7 @@ class TestComputePotentials(unittest.TestCase):
         epsilon = 1.0
         sigma = 1.0
         for r, expected in zip([0.5, 1.5], [epsilon, 0.0]):
-            potential_type = "HS"
+            potential_type = 1 # HS
             
             result = compute_potentials(epsilon, sigma, r, potential_type)
             self.assertAlmostEqual(result, expected, places=6)
@@ -32,7 +32,7 @@ class TestComputePotentials(unittest.TestCase):
         epsilon = 1.0
         sigma = 1.0
         r = 1.5
-        potential_type = "INVALID"
+        potential_type =  2 # INVALID
         
         with self.assertRaises(Exception):  # Expect an error for unsupported potential_type
             compute_potentials(epsilon, sigma, r, potential_type)
