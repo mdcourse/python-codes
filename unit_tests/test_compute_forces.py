@@ -14,7 +14,7 @@ class TestComputeForces(unittest.TestCase):
         epsilon = 1.0
         sigma = 1.0
         r = 2.0
-        potential_type = "LJ"
+        potential_type = 0 # LJ
         
         # Calculate expected force using the formula for LJ force
         expected = 48 * epsilon * ((sigma / r) ** 12 - 0.5 * (sigma / r) ** 6) / r
@@ -28,7 +28,7 @@ class TestComputeForces(unittest.TestCase):
         epsilon = 1.0
         sigma = 1.0
         r = 2.0  # Any r > sigma will return 0
-        potential_type = "HS"
+        potential_type = 1 # HS
         
         expected = 0.0  # Hard-Sphere force is zero for r > sigma
         result = compute_forces(epsilon, sigma, r, potential_type)
@@ -40,7 +40,7 @@ class TestComputeForces(unittest.TestCase):
         epsilon = 1.0
         sigma = 1.0
         r = 1.5
-        potential_type = "INVALID"
+        potential_type = 2 # INVALID
         
         # Expect ValueError for unsupported potential_type
         with self.assertRaises(ValueError):  
@@ -51,7 +51,7 @@ class TestComputeForces(unittest.TestCase):
         epsilon = 1.0
         sigma = 1.0
         r = 0.0
-        potential_type = "LJ"
+        potential_type = 0 # LJ
         
         # Expect division by zero error if r == 0
         with self.assertRaises(ZeroDivisionError):  

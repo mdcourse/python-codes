@@ -14,7 +14,7 @@ def compute_potentials(epsilon: float, sigma: float, r: float, potential_type: i
         else:
             return 0.0
     else:
-        return 0.0  # or raise if you really want
+        raise ValueError(f"Unsupported potential type: {potential_type}")
 
 @njit
 def compute_forces(epsilon: float, sigma: float, r: float, potential_type: int) -> float:
@@ -24,4 +24,4 @@ def compute_forces(epsilon: float, sigma: float, r: float, potential_type: int) 
     elif potential_type == 1:  # Hard-sphere
         return 0.0
     else:
-        return 0.0  # or raise if you want
+        raise ValueError(f"Unsupported potential type: {potential_type}")
