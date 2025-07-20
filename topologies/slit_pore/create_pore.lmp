@@ -1,0 +1,24 @@
+# LAMMPS input file
+
+units real
+dimension 3
+atom_style atomic
+boundary p p p
+pair_style lj/cut 4.0
+
+lattice fcc 3.37 origin 0.0 0.0 0.25
+region simbox block -3 3 -3 3 -3 3
+region wall block -3 3 -3 3 -2 2 side out
+
+create_box 2 simbox
+include parameters.inc
+
+create_atoms 2 region wall
+lattice sc 1
+
+create_atoms 1 random 100 12756 simbox overlap 2
+
+run 0
+
+write_data topology.data nocoeff
+
