@@ -17,14 +17,14 @@ class MonteCarlo(InitializeSimulation):
                 maximum_steps,
                 desired_temperature,
                 displace_mc = None,
-                # desired_mu = None,
+                desired_mu = None,
                 inserted_type = 0,
                 # swap_type = [None, None],
                 *args,
                 **kwargs):
         self.maximum_steps = maximum_steps
         self.displace_mc = displace_mc
-        # self.desired_mu = desired_mu
+        self.desired_mu = desired_mu
         self.inserted_type = inserted_type
         # self.swap_type = swap_type
         self.desired_temperature = desired_temperature
@@ -32,11 +32,11 @@ class MonteCarlo(InitializeSimulation):
         self.nondimensionalize_units(["desired_temperature", "displace_mc"])
         self.successful_move = 0
         self.failed_move = 0
-        # self.nondimensionalize_units(["desired_mu"])
-        # self.successful_insert = 0
-        # self.failed_insert = 0
-        # self.successful_delete = 0
-        # self.failed_delete = 0
+        self.nondimensionalize_units(["desired_mu"])
+        self.successful_insert = 0
+        self.failed_insert = 0
+        self.successful_delete = 0
+        self.failed_delete = 0
         # self.successful_swap = 0
         # self.failed_swap = 0
 
@@ -85,21 +85,20 @@ class MonteCarlo(InitializeSimulation):
         """
         Pick a random atom and generate a random displacement vector 
         for it, according to self.displace_mc settings.
-        
-        Returns:
-            atom_id (int): index of chosen atom
-            move (np.ndarray): displacement vector
         """
         atom_id = None
         displace_mc = 0
 
-        # loop until we pick an atom of a type that allows displacement
+        # Loop until we pick an atom of a type that allows displacement
         while displace_mc == 0:
+            # Pick atom randomly
             atom_id = np.random.randint(np.sum(self.number_atoms))
+            # Evaluate atom type
             atom_type = self.atom_types[atom_id]
+            # Check desired displace_mc for this atom type
             displace_mc = self.displace_mc[atom_type - 1]
 
-        # generate displacement vector
+        # Generate displacement vector
         if self.box_mda[2] == 0:  # 2D
             move = (np.random.random(2) - 0.5) * displace_mc
             move = np.append(move, 0.0)
@@ -107,7 +106,6 @@ class MonteCarlo(InitializeSimulation):
             move = (np.random.random(3) - 0.5) * displace_mc
 
         return atom_id, move
-
 
     def monte_carlo_move(self):
         if self.displace_mc is None:
@@ -121,96 +119,114 @@ class MonteCarlo(InitializeSimulation):
                                     self.box_mda[:3], self.cross_sigmas,
                                     self.cross_epsilons)
 
+        # Measure the initial energy, and store the initial state
         initial_Epot = self.Epot
         state_backup = self.backup_state()
 
-        # Do the actual move:
+        # Do the MC move
         atom_id, move = self.propose_displacement()
         self.positions[atom_id] += move
 
-        trial_Epot = compute_epot(self.neighbor_lists,
-                                    self.positions,
-                                    self.box_mda[:3],
-                                    self.cross_sigmas,
-                                    self.cross_epsilons)
+        # Remeasure the energy potentielle
+        trial_Epot = compute_epot(self.neighbor_lists, self.positions,
+                                self.box_mda[:3], self.cross_sigmas,
+                                self.cross_epsilons)
+    
         accepted = self.evaluate_trial(trial_Epot, initial_Epot, "successful_move", "failed_move")
 
         if not accepted:
             self.restore_state(state_backup)
+        else:
+            self.Epot = trial_Epot
 
-    if False:
-    
-        def monte_carlo_move(self):
-            """Monte Carlo move trial."""
-            if self.displace_mc is not None: # only trigger if displace_mc was provided by the user
-                # When needed, recalculate neighbor/coeff lists
-                self.update_neighbor_lists()
-                self.update_cross_coefficients()
+    def propose_delete(self):
+        """Propose deleting a particle and return trial energy & acceptance probability."""
+        if self.number_atoms[self.inserted_type] <= 0:
+            raise RuntimeError("No more atoms to delete.")
 
-                # If self.Epot does not exist yet, calculate it
-                # It should only be necessary when step = 0
-                if hasattr(self, 'Epot') is False:
+        atom_id = np.random.randint(self.number_atoms[self.inserted_type])
+        self.number_atoms[self.inserted_type] -= 1
+        shift_id = sum(self.number_atoms[:self.inserted_type])
 
-                    self.Epot = compute_epot(self.neighbor_lists,
-                                            self.positions,
-                                            self.box_mda[:3],
-                                            self.cross_sigmas,
-                                            self.cross_epsilons)
-                    
-                # Make a copy of the initial atom positions and initial energy
-                initial_Epot = self.Epot
-                # initial_positions = copy.deepcopy(self.atoms_positions)
-                # initial_positions = np.copy(self.atoms_positions)
-                # initial_positions = numba_copy(self.atoms_positions)
-                # Pick an atom id randomly
+        self.positions = np.delete(self.positions, shift_id + atom_id, axis=0)
 
-                displace_mc = 0
-                while displace_mc == 0:
-                    atom_id = np.random.randint(np.sum(self.number_atoms))
-                    atom_type = self.atom_types[atom_id]
-                    displace_mc = self.displace_mc[atom_type - 1]
-                
-                # Move the chosen atom in a random direction
-                # The maximum displacement is set by self.displace_mc
-                if self.box_mda[2] == 0:  # 2D case
-                    move = (np.random.random(2) - 0.5) * displace_mc
-                    move = np.append(move, 0.0)  # Pad with zero for the z-component
-                else:  # 3D case
-                    move = (np.random.random(3) - 0.5) * displace_mc
-                initial_position_atom = np.copy(self.positions[atom_id])
-                self.positions[atom_id] += move
+        self.update_neighbor_lists()
+        # self.assign_atom_properties()
+        self.update_cross_coefficients()
 
-                # Measure the potential energy of the new configuration
-                trial_Epot = compute_epot(self.neighbor_lists,
-                                            self.positions,
-                                            self.box_mda[:3],
-                                            self.cross_sigmas,
-                                            self.cross_epsilons)
+        trial_Epot = compute_epot(self.neighbor_lists, self.positions,
+                                self.box_mda[:3], self.cross_sigmas,
+                                self.cross_epsilons)
+        
+        Lambda = calculate_Lambda(self.desired_temperature,
+                                self.masses[self.inserted_type])
+        beta = 1 / self.desired_temperature
+        Nat = np.sum(self.number_atoms)
+        Vol = np.prod(self.box_mda[:3])
 
-                # Evaluate whether the new configuration should be kept or not
-                beta =  1/self.desired_temperature
-                delta_E = trial_Epot-initial_Epot
-                random_number = np.random.random() # random number between 0 and 1
+        acc_prob = min(1, (Lambda**3 * (Nat) / Vol) *
+                        np.exp(-beta * (self.desired_mu[self.inserted_type]
+                                        + trial_Epot - self.Epot)))
+        
+        print("acc_prob", acc_prob)
 
-                if beta * delta_E > 700:
-                    acceptation_probability = 0  # exp(-700) is effectively 0.
-                elif beta * delta_E < -700:  # Avoid overflow for large negative exponents
-                    acceptation_probability = 1  # exp(-(-700)) is effectively infinite
-                else:
-                    acceptation_probability = np.min([1, np.exp(-beta * delta_E)])
+        return trial_Epot, acc_prob
 
-                if random_number <= acceptation_probability: # Accept new position
-                    self.Epot = trial_Epot
-                    self.successful_move += 1
-                else: # Reject new position
-                    self.positions[atom_id] = initial_position_atom
-                    # self.atoms_positions = initial_positions # Revert to initial positions
-                    self.failed_move += 1
+
+    def propose_insert(self):
+        """Propose inserting a particle and return trial energy & acceptance probability."""
+        self.number_atoms[self.inserted_type] += 1
+
+        new_atom_pos = np.random.random(3) * np.diff(self.box_bounds).T \
+                    - np.diff(self.box_bounds).T / 2
+        shift_id = sum(self.number_atoms[:self.inserted_type])
+
+        self.positions = np.insert(self.positions, shift_id, new_atom_pos, axis=0)
+
+        self.update_neighbor_lists()
+        # self.assign_atom_properties()
+        self.update_cross_coefficients()
+
+        trial_Epot = compute_epot(self.neighbor_lists, self.positions,
+                                self.box_mda[:3], self.cross_sigmas,
+                                self.cross_epsilons)
+        
+        Lambda = calculate_Lambda(self.desired_temperature,
+                                self.atom_mass[self.inserted_type])
+        beta = 1 / self.desired_temperature
+        Nat = np.sum(self.number_atoms)
+        Vol = np.prod(self.box_mda[:3])
+
+        acc_prob = min(1, Vol / (Lambda**3 * Nat) *
+                        np.exp(beta * (self.desired_mu - trial_Epot + self.Epot)))
+        return trial_Epot, acc_prob
+
+
+    def monte_carlo_exchange(self):
+        if self.desired_mu is None:
+            return
+
+        state_backup = self.backup_state()
+        insert = np.random.random() < 0.5  # 50/50 choice
+
+        if insert:
+            trial_Epot, acc_prob = self.propose_insert()
+            success_attr, fail_attr = "successful_insert", "failed_insert"
+        else:
+            trial_Epot, acc_prob = self.propose_delete()
+            success_attr, fail_attr = "successful_delete", "failed_delete"
+
+        accepted = self.evaluate_trial(trial_Epot, self.Epot, success_attr, fail_attr, acc_prob)
+        if not accepted:
+            self.restore_state(state_backup)
+        else:
+            self.Epot = trial_Epot
 
     def run(self):
         """Perform the loop over time."""
         for self.step in range(0, self.maximum_steps+1):
             self.monte_carlo_move()
+            self.monte_carlo_exchange()
             self.wrap_in_box()
             log_simulation_data(self)
             update_dump_file(self, "dump.mc.lammpstrj")
